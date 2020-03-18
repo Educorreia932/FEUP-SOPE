@@ -11,7 +11,7 @@ typedef struct {
     char* path;
     bool all;
     bool bytes;
-    unsigned int sizes;
+    unsigned int size;
     bool dereference;
     bool separate_dirs;
     unsigned int max_depth;
@@ -19,7 +19,7 @@ typedef struct {
 
 void parse_commands(int argc, char* argv[], commands* c) {
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-')
+        if (argv[i][0] != '-' && (strcmp(argv[i - 1], "-B")))
             c->path = argv[i];
 
         else if (!strcmp(argv[i], "-a"))
@@ -28,14 +28,41 @@ void parse_commands(int argc, char* argv[], commands* c) {
         else if (!strcmp(argv[i], "-b"))
             c->bytes = true;
 
+        else if (!strcmp(argv[i], "-B") && (i + 1 < argc)) {
+            char* argument = argv[i + 1];
+            char* size;
+
+            unsigned int val = strtol(argument, &size, 10);
+
+            if ((size == argument) || (*size != '\0')) {
+                perror("Size must be an integer\n");
+                exit(1);
+            }
+
+            else
+                c->size = atoi(argument);
+        }
+
         else if (!strcmp(argv[i], "-L"))
             c->dereference = true;
 
         else if (!strcmp(argv[i], "-S"))
             c->separate_dirs = true;
 
-        else if (!strcmp(argv[i], "-S") && (i + 1 <= argc) && (is_digit(argv[i + 1])))
-            c->max_depth = atoi(argv[i + 1]);
+        else if (strstr(argv[i], "--max-depth=") != NULL) {
+            char* max_depth;
+            char* token = strtok(argv[i], "=");
+            token = strtok(NULL, "=");
+
+            unsigned int val = strtol(token, &max_depth, 10);
+
+            if ((max_depth == token) || (*max_depth != '\0')) {
+                perror("Max depth must be an integer\n");
+                exit(1);
+            }
+
+            else
+                c->max_depth = atoi(token);
         }
     }
 }
@@ -43,6 +70,11 @@ void parse_commands(int argc, char* argv[], commands* c) {
 void print_commands(commands* c) {
     printf("Path: %s\n", c->path);
     printf("All: %s\n", c->all? "YES" : "NO");
+    printf("Bytes: %s\n", c->bytes? "YES" : "NO");
+    printf("Size: %u\n", c->size);
+    printf("Dereference: %s\n", c->dereference? "YES" : "NO");
+    printf("Separate directories: %s\n", c->separate_dirs? "YES" : "NO");
+    printf("Max depth: %u\n", c->max_depth);
 }
 
 int main(int argc, char* argv[], char* envp[]) {
@@ -65,15 +97,15 @@ int main(int argc, char* argv[], char* envp[]) {
         exit(1);
     }
 
-    if ((dirp = opendir(c->path)) == NULL) {
-        perror(argv[1]);
-        exit(2);
-    } 
-
     parse_commands(argc, argv, c);
 
     print_commands(c);
 
+    if ((dirp = opendir(c->path)) == NULL) {
+        perror(c->path);
+        exit(3);
+    } 
+    
     // while ((direntp = readdir( dirp)) != NULL) {
     //     sprintf(name,"%s/%s",argv[1],direntp->d_name); // <----- NOTAR
         
