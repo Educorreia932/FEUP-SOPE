@@ -78,7 +78,7 @@ void print_commands(commands* c) {
 }
 
 int main(int argc, char* argv[], char* envp[]) {
-     DIR *dirp;
+    DIR *dirp;
     struct dirent *direntp;
     struct stat stat_buf;
     char *str;
@@ -88,6 +88,7 @@ int main(int argc, char* argv[], char* envp[]) {
     c->path = "./";
     c->all = false;
     c->bytes = false;
+    c->size = 1024;
     c->dereference = false;
     c->separate_dirs = false;
     c->max_depth = UINT_MAX;
@@ -99,34 +100,43 @@ int main(int argc, char* argv[], char* envp[]) {
 
     parse_commands(argc, argv, c);
 
-    print_commands(c);
+    // print_commands(c);
 
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
         exit(3);
     } 
     
-    // while ((direntp = readdir( dirp)) != NULL) {
-    //     sprintf(name,"%s/%s",argv[1],direntp->d_name); // <----- NOTAR
+    while ((direntp = readdir( dirp)) != NULL) {
+        sprintf(name, "%s/%s", c->path, direntp->d_name);
         
-    //     // alternativa a chdir(); ex: anterior
-    //     if (lstat(name, &stat_buf)==-1) {
-    //         perror("lstat ERROR");
-    //         exit(3);
-    //     }
+        if (lstat(name, &stat_buf) == -1) {
+            perror("lstat ERROR");
+            exit(3);
+        }
 
-    //     // printf("%10d - ",(int) stat_buf.st_ino);
-    //     if (S_ISREG(stat_buf.st_mode)) 
-    //         str = "regular";
+        int size;
+        double multiplier = stat_buf.st_blocks != 0? 512.0 / c->size : 0;
+
+        if (c->bytes)
+            size = stat_buf.st_size;
+
+        else
+            size = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : multiplier;           
+
+        // if (S_ISREG(stat_buf.st_mode)) 
+        //     str = "regular";
         
-    //     else if (S_ISDIR(stat_buf.st_mode))
-    //         str = "directory";
+        // else if (S_ISDIR(stat_buf.st_mode))
+        //     str = "directory";
+
+        //     // if (pid_t pid = fork())
         
-    //     else 
-    //         str = "other";
+        // else 
+        //     str = "other";
         
-    //     printf("%-25s - %s\n", direntp->d_name, str);
-    // }
+        printf("%-20u ./%s\n", size, direntp->d_name);
+    }
 
     closedir(dirp); 
 
