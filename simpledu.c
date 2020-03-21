@@ -62,7 +62,7 @@ int main(int argc, char* argv[], char* envp[]) {
             break;
 
         // File
-        if (S_ISREG(stat_buf.st_mode)) {
+        if (S_ISREG(stat_buf.st_mode) && c->max_depth > 0) {
             printf("%-7u %s\n", size, name);
         }
         
@@ -79,15 +79,20 @@ int main(int argc, char* argv[], char* envp[]) {
             int status;
 
             if (pid == 0) {
-                char* argv_[3] = {"simpledu", name, NULL};
+                char max_depth[50];
+                sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
-                if (execve("simpledu", argv_, envp))
+                char* argv_[4] = {"simpledu", name, max_depth, NULL};
+
+                if (execve("simpledu", argv_, envp) == -1)
                     printf("Error in exec %s\n", name);
             }
 
             else {
                 wait(&status);
-                printf("%-7u %s\n", size, name);
+
+                if (c->max_depth > 0)
+                    printf("%-7u %s\n", size, name);
             }
         }
     }

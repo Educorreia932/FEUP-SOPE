@@ -16,7 +16,7 @@ typedef struct {
     unsigned int size; // Block size in bytes
     bool dereference; // Follow symbolic links 
     bool separate_dirs; // Don't include 
-    unsigned int max_depth; // Max depth to show
+    int max_depth; // Max depth to show
 } flags;
 
 void parse_flags(int argc, char* argv[], flags* c);
