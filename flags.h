@@ -21,4 +21,6 @@ typedef struct {
 
 void parse_flags(int argc, char* argv[], flags* c);
 
+flags* flags_constructor();
+
 void print_flags(flags* c);

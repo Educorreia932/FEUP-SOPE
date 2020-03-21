@@ -18,15 +18,7 @@ int main(int argc, char* argv[], char* envp[]) {
     struct stat stat_buf;
     char *str;
     char name[300]; 
-    flags* c = (flags*) malloc(sizeof(flags));
-
-    c->path = ".";
-    c->all = false;
-    c->bytes = false;
-    c->size = DEFAULT_BLOCK_SIZE;
-    c->dereference = false;
-    c->separate_dirs = false;
-    c->max_depth = UINT_MAX;
+    flags* c = flags_constructor();
 
     if (argc > 9) {
         perror("Usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
@@ -62,7 +54,7 @@ int main(int argc, char* argv[], char* envp[]) {
             break;
 
         // File
-        if (S_ISREG(stat_buf.st_mode) && c->max_depth > 0) {
+        if (S_ISREG(stat_buf.st_mode) && c->max_depth > 0 && c->all) {
             printf("%-7u %s\n", size, name);
         }
         

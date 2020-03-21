@@ -50,6 +50,20 @@ void parse_flags(int argc, char* argv[], flags* c) {
     }
 }
 
+flags* flags_constructor() {
+    flags* c = (flags*) malloc(sizeof(flags));
+
+    c->path = ".";
+    c->all = false;
+    c->bytes = false;
+    c->size = DEFAULT_BLOCK_SIZE;
+    c->dereference = false;
+    c->separate_dirs = false;
+    c->max_depth = INT_MAX;
+
+    return c;
+}
+
 void print_flags(flags* c) {
     printf("Path: %s\n", c->path);
     printf("All: %s\n", c->all? "YES" : "NO");
