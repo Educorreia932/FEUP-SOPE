@@ -13,6 +13,7 @@
 #include "flags.h"
 
 int main(int argc, char* argv[], char* envp[]) {
+
     DIR *dirp;
     struct dirent *direntp;
     struct stat stat_buf;
@@ -26,6 +27,7 @@ int main(int argc, char* argv[], char* envp[]) {
     }
 
     parse_flags(argc, argv, c);
+    //print_flags(c);
 
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
@@ -33,6 +35,7 @@ int main(int argc, char* argv[], char* envp[]) {
     } 
     
     while ((direntp = readdir(dirp)) != NULL) {
+        
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
 

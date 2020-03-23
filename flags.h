@@ -14,6 +14,7 @@ typedef struct {
     bool all; // Also include files
     bool bytes; // Real number of bytes
     unsigned int size; // Block size in bytes
+    bool count_links; //counts size many times if hardlinked
     bool dereference; // Follow symbolic links 
     bool separate_dirs; // Don't include 
     int max_depth; // Max depth to show
