@@ -8,7 +8,6 @@ flags* flags_constructor() {
     c->all = false;
     c->bytes = false;
     c->size = DEFAULT_BLOCK_SIZE;
-    c->count_links = false;
     c->dereference = false;
     c->separate_dirs = false;
     c->max_depth = INT_MAX;
@@ -42,10 +41,6 @@ void parse_flags(int argc, char* argv[], flags* c) {
             else
                 c->size = atoi(argument);
         }
-        else if (!strcmp(argv[i], "-l") || !strcmp(argv[i], "--count-links")){ //count size many times
-            c->count_links = true;
-
-        }
         else if (!strcmp(argv[i], "-L") || !strcmp(argv[i], "--dereference")) //symbolic links
             c->dereference = true;
 
@@ -77,7 +72,6 @@ void print_flags(flags* c) {
     printf("All: %s\n", c->all? "YES" : "NO");
     printf("Bytes: %s\n", c->bytes? "YES" : "NO");
     printf("Size: %u\n", c->size);
-    printf("Count links: %s\n", c->count_links? "YES" : "NO");
     printf("Dereference: %s\n", c->dereference? "YES" : "NO");
     printf("Separate directories: %s\n", c->separate_dirs? "YES" : "NO");
     printf("Max depth: %u\n", c->max_depth);
