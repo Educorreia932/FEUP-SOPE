@@ -62,6 +62,10 @@ void parse_flags(int argc, char* argv[], flags* c) {
             else
                 c->max_depth = atoi(token);
         }
+        else if (strcmp(argv[i], "-l")){ //checking for invalid arguments
+            printf("simpledu: invalid option %s\n",argv[i]);
+            exit(2);
+        }
     }
 }
 
