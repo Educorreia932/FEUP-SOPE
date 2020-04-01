@@ -12,6 +12,9 @@
 
 #include "flags.h"
 
+#define READ 0
+#define WRITE 1
+
 int main(int argc, char* argv[], char* envp[]) {
 
     DIR *dirp;
@@ -35,6 +38,8 @@ int main(int argc, char* argv[], char* envp[]) {
     } 
     
     while ((direntp = readdir(dirp)) != NULL) {
+        int fd[2];
+
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
 
@@ -57,12 +62,21 @@ int main(int argc, char* argv[], char* envp[]) {
 
         // File
         if (S_ISREG(stat_buf.st_mode) && c->max_depth > 0 && c->all) {
-            printf("%-7u %s\n", size, name);
+            char str[200];
+
+            sprintf(str, "%-7u %s\n", size, name);
+
+            write(STDOUT_FILENO, str, strlen(str));
+
+            close(fd[READ]);
+            write(fd[WRITE], &size, sizeof(int*));
+            close(fd[WRITE]);
         }
         
         // Directory
         else if (S_ISDIR(stat_buf.st_mode)) {
-            pid_t pid = 1;
+            pid_t pid;
+            int status;
 
             if (name[strlen(name) - 1] == '.') // Fix this to allow for any folder ended in .
                 continue;
@@ -70,9 +84,22 @@ int main(int argc, char* argv[], char* envp[]) {
             else
                 pid = fork();
 
-            int status;
+            // Parent
+            if (pid > 0) {
+                int* file_size;
 
-            if (pid == 0) {
+                wait(&status);
+
+                close(fd[READ]);
+                write(fd[WRITE], file_size, sizeof(int*));
+                close(fd[WRITE]);
+
+                if (c->max_depth > 0)
+                    printf("%-7u %s\n", size, name);
+            }
+
+            // Child
+            else if (pid == 0) {
                 char max_depth[50];
                 sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
@@ -87,11 +114,11 @@ int main(int argc, char* argv[], char* envp[]) {
                     printf("Error in exec %s\n", name);
             }
 
+            // Error
             else {
-                wait(&status);
+                perror("Error in fork\n");
 
-                if (c->max_depth > 0)
-                    printf("%-7u %s\n", size, name);
+                exit(3);
             }
         }
     }
