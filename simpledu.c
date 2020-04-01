@@ -35,7 +35,6 @@ int main(int argc, char* argv[], char* envp[]) {
     } 
     
     while ((direntp = readdir(dirp)) != NULL) {
-        
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
 
@@ -65,7 +64,7 @@ int main(int argc, char* argv[], char* envp[]) {
         else if (S_ISDIR(stat_buf.st_mode)) {
             pid_t pid = 1;
 
-            if (name[strlen(name) - 1] == '.')
+            if (name[strlen(name) - 1] == '.') // Fix this to allow for any folder ended in .
                 continue;
 
             else
@@ -77,7 +76,12 @@ int main(int argc, char* argv[], char* envp[]) {
                 char max_depth[50];
                 sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
-                char* argv_[4] = {"simpledu", name, max_depth, NULL};
+                char all[3] = "-a";
+
+                if (!c->all)
+                    all[0] = '\0'; // Empty the string, set it to ""
+
+                char* argv_[5] = {"simpledu", name, max_depth, all, NULL};
 
                 if (execve("simpledu", argv_, envp) == -1)
                     printf("Error in exec %s\n", name);
