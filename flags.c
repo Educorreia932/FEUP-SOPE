@@ -16,18 +16,20 @@ flags* flags_constructor() {
 }
 
 void parse_flags(int argc, char* argv[], flags* c) {
-
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-' && (strcmp(argv[i - 1], "-B")))
+        if (!strcmp(argv[i], ""))
+            continue;
+
+        if (argv[i][0] != '-' && (strcmp(argv[i - 1], "-B"))) // Path
             c->path = argv[i];
 
-        else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--all")) //all files
+        else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--all")) // Include files
             c->all = true;
 
-        else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--bytes")) //real number of bytes
+        else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--bytes")) // Real number of bytes
             c->bytes = true;
 
-        else if (!strcmp(argv[i], "-B") && (i + 1 < argc)) { //block size (bytes)
+        else if (!strcmp(argv[i], "-B") && (i + 1 < argc)) { // Block size (bytes)
             char* argument = argv[i + 1];
             char* size;
 
@@ -40,16 +42,17 @@ void parse_flags(int argc, char* argv[], flags* c) {
 
             else
                 c->size = val;
+
             i++;
-                
         }
-        else if (!strcmp(argv[i], "-L") || !strcmp(argv[i], "--dereference")) //symbolic links
+
+        else if (!strcmp(argv[i], "-L") || !strcmp(argv[i], "--dereference")) // Symbolic links
             c->dereference = true;
 
-        else if (!strcmp(argv[i], "-S") || !strcmp(argv[i], "--separate-dirs")) //exclude sub directory info
+        else if (!strcmp(argv[i], "-S") || !strcmp(argv[i], "--separate-dirs")) // Exclude sub directory info
             c->separate_dirs = true;
 
-        else if (strstr(argv[i], "--max-depth=") != NULL) { //directory max depth
+        else if (strstr(argv[i], "--max-depth=") != NULL) { // Directory max depth
             char* max_depth;
             char* token = strtok(argv[i], "=");
             token = strtok(NULL, "=");
@@ -64,13 +67,13 @@ void parse_flags(int argc, char* argv[], flags* c) {
             else
                 c->max_depth = atoi(token);
         }
-        else if (strcmp(argv[i], "-l")){ //checking for invalid arguments
-            printf("simpledu: invalid option %s\n",argv[i]);
+
+        else if (strcmp(argv[i], "-l")){ // Checking for invalid arguments
+            printf("simpledu: invalid option %s\n", argv[i]);
             exit(2);
         }
     }
 }
-
 
 //-----DEBUG
 void print_flags(flags* c) {

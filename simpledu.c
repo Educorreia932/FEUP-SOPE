@@ -49,11 +49,11 @@ int main(int argc, char* argv[], char* envp[]) {
         int size;
         double multiplier = stat_buf.st_blocks != 0? 512.0 / c->size : 0;
 
-        if (c->bytes) 
+        if (c->bytes)
             size = stat_buf.st_size;
 
         else
-            size = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : multiplier;           
+            size = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : multiplier;         
 
         if (S_ISLNK(stat_buf.st_mode))
             break;
@@ -72,7 +72,6 @@ int main(int argc, char* argv[], char* envp[]) {
         
         // Directory
         else if (S_ISDIR(stat_buf.st_mode)) {
-
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
 
@@ -112,7 +111,7 @@ int main(int argc, char* argv[], char* envp[]) {
                 char max_depth[50];
                 sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
-                char* argv_[5] = {"simpledu", name, max_depth, c->all? "-a" : NULL, NULL};
+                char* argv_[6] = {"simpledu", name, max_depth, c->all? "-a" : "", c->bytes? "-b" : "",NULL};
 
                 if (execve("simpledu", argv_, envp) == -1)
                     perror("Error in exec\n");
