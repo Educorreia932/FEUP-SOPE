@@ -16,13 +16,14 @@
 #define WRITE 1
 
 int main(int argc, char* argv[], char* envp[]) {
-
     DIR *dirp;
     struct dirent *direntp;
     struct stat stat_buf;
     char *str;
     char name[300]; 
     flags* c = flags_constructor();
+    int folder_size = 0;
+    int fd[2];
 
     if (argc > 9) {
         perror("Usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
@@ -30,16 +31,13 @@ int main(int argc, char* argv[], char* envp[]) {
     }
 
     parse_flags(argc, argv, c);
-    //print_flags(c);
 
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
         exit(2);
     } 
-    
-    while ((direntp = readdir(dirp)) != NULL) {
-        int fd[2];
 
+    while ((direntp = readdir(dirp)) != NULL) {
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
 
@@ -61,22 +59,23 @@ int main(int argc, char* argv[], char* envp[]) {
             break;
 
         // File
-        if (S_ISREG(stat_buf.st_mode) && c->max_depth > 0 && c->all) {
+        if (S_ISREG(stat_buf.st_mode)) {
             char str[200];
 
             sprintf(str, "%-7u %s\n", size, name);
 
-            write(STDOUT_FILENO, str, strlen(str));
+            if (c->max_depth > 0 && c->all)
+                write(STDOUT_FILENO, str, strlen(str));
 
-            close(fd[READ]);
-            write(fd[WRITE], &size, sizeof(int*));
-            close(fd[WRITE]);
+            folder_size += size;
         }
         
         // Directory
         else if (S_ISDIR(stat_buf.st_mode)) {
             pid_t pid;
-            int status;
+
+            if (pipe(fd) < 0) 
+                perror("Pipe error %s\n");  
 
             if (name[strlen(name) - 1] == '.') // Fix this to allow for any folder ended in .
                 continue;
@@ -86,16 +85,22 @@ int main(int argc, char* argv[], char* envp[]) {
 
             // Parent
             if (pid > 0) {
-                int* file_size;
+                int child_size;
 
-                wait(&status);
+                wait(NULL);
 
-                close(fd[READ]);
-                write(fd[WRITE], file_size, sizeof(int*));
-                close(fd[WRITE]);
+                // printf("READ FD %u %s\n", fd[READ], c->path);
+                // read(fd[READ], &child_size, sizeof(int*));
 
-                if (c->max_depth > 0)
-                    printf("%-7u %s\n", size, name);
+                folder_size += child_size;
+
+                if (c->max_depth > 0) {
+                    char str[200];
+
+                    sprintf(str, "%-7u %s\n", folder_size, name);
+                    
+                    write(STDOUT_FILENO, str, strlen(str));
+                }
             }
 
             // Child
@@ -103,12 +108,8 @@ int main(int argc, char* argv[], char* envp[]) {
                 char max_depth[50];
                 sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
-                char all[3] = "-a";
-
-                if (!c->all)
-                    all[0] = '\0'; // Empty the string, set it to ""
-
-                char* argv_[5] = {"simpledu", name, max_depth, all, NULL};
+                char* argv_[5] = {"simpledu", name, max_depth, c->all? "-a" : NULL, NULL};
+               
 
                 if (execve("simpledu", argv_, envp) == -1)
                     printf("Error in exec %s\n", name);
@@ -122,6 +123,9 @@ int main(int argc, char* argv[], char* envp[]) {
             }
         }
     }
+
+    // printf("WRITE FD %u %s\n", fd[WRITE], c->path);
+    write(fd[WRITE], &folder_size, sizeof(int*));
 
     closedir(dirp); 
 
