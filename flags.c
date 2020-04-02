@@ -39,7 +39,9 @@ void parse_flags(int argc, char* argv[], flags* c) {
             }
 
             else
-                c->size = atoi(argument);
+                c->size = val;
+            i++;
+                
         }
         else if (!strcmp(argv[i], "-L") || !strcmp(argv[i], "--dereference")) //symbolic links
             c->dereference = true;
