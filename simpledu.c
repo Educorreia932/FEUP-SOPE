@@ -14,12 +14,12 @@
 
 #define READ 0
 #define WRITE 1
+#define stupidenv "stupidname"
 
 int main(int argc, char* argv[], char* envp[]) {
     DIR *dirp;
     struct dirent *direntp;
     struct stat stat_buf;
-    char *str;
     char name[300]; 
     flags* c = flags_constructor();
     int folder_size = 0;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[], char* envp[]) {
         
         // Directory
         else if (S_ISDIR(stat_buf.st_mode)) {
-            pid_t pid;
+            pid_t pid = -1;
 
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
@@ -85,12 +85,16 @@ int main(int argc, char* argv[], char* envp[]) {
 
             // Parent
             if (pid > 0) {
-                int child_size;
+                int child_size = 0;
 
+                close(fd[WRITE]);
                 wait(NULL);
-
+                int HELP;
                 // printf("READ FD %u %s\n", fd[READ], c->path);
-                // read(fd[READ], &child_size, sizeof(int*));
+                if((HELP = read(fd[READ], &child_size, sizeof(int))) == 0)
+                    printf("Failed to read\n\n");
+                if(HELP > 0)
+                    printf("READ");
 
                 folder_size += child_size;
 
@@ -105,11 +109,18 @@ int main(int argc, char* argv[], char* envp[]) {
 
             // Child
             else if (pid == 0) {
+                close(fd[READ]);
+                dup2(fd[WRITE], 999);
+                close(fd[WRITE]);
+
                 char max_depth[50];
                 sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
                 char* argv_[5] = {"simpledu", name, max_depth, c->all? "-a" : NULL, NULL};
                
+                if(getenv(stupidenv) == NULL){
+                    setenv(stupidenv, stupidenv, 1);
+                }
 
                 if (execve("simpledu", argv_, envp) == -1)
                     printf("Error in exec %s\n", name);
@@ -125,9 +136,13 @@ int main(int argc, char* argv[], char* envp[]) {
     }
 
     // printf("WRITE FD %u %s\n", fd[WRITE], c->path);
-    write(fd[WRITE], &folder_size, sizeof(int*));
+    
+    if (getenv(stupidenv) != NULL) 
+        if(write(fd[WRITE], &folder_size, sizeof(int) == 0))
+            printf("Sent nothin");
 
     closedir(dirp); 
-
+    close(fd[READ]);
+    close(fd[WRITE]);
     exit(0);
 }
