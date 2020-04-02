@@ -11,6 +11,7 @@
 #include <limits.h>
 
 #include "flags.h"
+#include "utils.h"
 
 #define READ 0
 #define WRITE 1
@@ -31,12 +32,6 @@ int main(int argc, char* argv[], char* envp[]) {
 
     parse_flags(argc, argv, c);
     
-    if (getenv("pidEnv") == NULL){
-        char tmp[27];
-        sprintf(tmp, "%d", getpid());
-        setenv("pidEnv", tmp, 1);
-    }
-        
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
         exit(2);
@@ -82,7 +77,7 @@ int main(int argc, char* argv[], char* envp[]) {
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
 
-            if (name[strlen(name) - 1] == '.') // Fix this to allow for any folder ended in .
+            if (check_folder(name))
                 continue;
 
             else
@@ -95,8 +90,7 @@ int main(int argc, char* argv[], char* envp[]) {
                 close(fd[WRITE]);
                 wait(NULL);
 
-                while (read(fd[READ], &child_size, sizeof(int)) == 0)
-                    continue;
+                read(fd[READ], &child_size, sizeof(int));
 
                 folder_size += child_size;
 
@@ -121,7 +115,6 @@ int main(int argc, char* argv[], char* envp[]) {
                 sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
                 char* argv_[5] = {"simpledu", name, max_depth, c->all? "-a" : NULL, NULL};
-               
 
                 if (execve("simpledu", argv_, envp) == -1)
                     printf("Error in exec %s\n", name);
@@ -138,11 +131,7 @@ int main(int argc, char* argv[], char* envp[]) {
     char tmp[27];
     sprintf(tmp, "%d", getpid());
 
-    char* pidEnv = getenv("pidEnv");
-
-    if (!strcmp(pidEnv, tmp)) {
-        write(999, &folder_size, sizeof(int));
-    }
+    write(999, &folder_size, sizeof(int));
     
     closedir(dirp); 
     close(fd[READ]);
