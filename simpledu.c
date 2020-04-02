@@ -72,10 +72,11 @@ int main(int argc, char* argv[], char* envp[]) {
         
         // Directory
         else if (S_ISDIR(stat_buf.st_mode)) {
-            pid_t pid = -1;
 
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
+
+            pid_t pid = -1;
 
             if (check_folder(name))
                 continue;
@@ -85,10 +86,9 @@ int main(int argc, char* argv[], char* envp[]) {
 
             // Parent
             if (pid > 0) {
-                int child_size = 0;
+                int child_size;
 
                 close(fd[WRITE]);
-                wait(NULL);
 
                 read(fd[READ], &child_size, sizeof(int));
 
@@ -97,11 +97,9 @@ int main(int argc, char* argv[], char* envp[]) {
                 if (c->max_depth > 0) {
                     char str[200];
 
-                    sprintf(str, "%-7u %s\n", folder_size, name);
+                    sprintf(str, "%-7u %s\n", child_size, name);
                     
                     write(STDOUT_FILENO, str, strlen(str));
-
-                    folder_size = 0;
                 }
             }
 
@@ -117,7 +115,7 @@ int main(int argc, char* argv[], char* envp[]) {
                 char* argv_[5] = {"simpledu", name, max_depth, c->all? "-a" : NULL, NULL};
 
                 if (execve("simpledu", argv_, envp) == -1)
-                    printf("Error in exec %s\n", name);
+                    perror("Error in exec\n");
             }
 
             // Error
@@ -132,6 +130,8 @@ int main(int argc, char* argv[], char* envp[]) {
     sprintf(tmp, "%d", getpid());
 
     write(999, &folder_size, sizeof(int));
+
+    wait(NULL);
     
     closedir(dirp); 
     close(fd[READ]);
