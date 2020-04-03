@@ -47,13 +47,20 @@ int main(int argc, char* argv[], char* envp[]) {
         }
 
         int size;
-        double multiplier = stat_buf.st_blocks != 0? 512.0 / c->size : 0;
+        double aux;
+        double multiplier = stat_buf.st_blocks != 0? 512.0 / (double)c->size : 1;
 
         if (c->bytes)
             size = stat_buf.st_size;
 
-        else
-            size = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : multiplier;         
+        else{
+            aux = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : 1;  
+
+            if(aux - (int)aux > 0)
+                size = (int)aux +1;
+            else size = (int)aux;       
+        }
+            
 
         if (S_ISLNK(stat_buf.st_mode))
             break;
@@ -79,49 +86,77 @@ int main(int argc, char* argv[], char* envp[]) {
 
             if (check_folder(name))
                 continue;
+            else if (name[strlen(name) - 1] == '.' && name[strlen(name) - 2] == '/'){
+                int size;
+                double aux;
+                double multiplier = stat_buf.st_blocks != 0? 512.0 / (double)c->size : 1;
 
-            else
+                if (c->bytes)
+                    size = stat_buf.st_size;
+
+                else{
+                    aux = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : 1;  
+
+                    if(aux - (int)aux > 0)
+                        size = (int)aux +1;
+                    else size = (int)aux;       
+                }
+
+                char str[200];
+
+                sprintf(str, "%-7u %s\n", size, name);
+
+                if (c->max_depth > 0 && c->all)
+                    write(STDOUT_FILENO, str, strlen(str));
+
+                folder_size += size;
+            }
+
+            else{
                 pid = fork();
 
-            // Parent
-            if (pid > 0) {
-                int child_size;
+                // Parent
+                if (pid > 0) {
+                    int child_size;
 
-                close(fd[WRITE]);
+                    close(fd[WRITE]);
 
-                read(fd[READ], &child_size, sizeof(int));
+                    read(fd[READ], &child_size, sizeof(int));
 
-                folder_size += child_size;
+                    folder_size += child_size;
 
-                if (c->max_depth > 0) {
-                    char str[200];
+                    if (c->max_depth > 0) {
+                        char str[200];
 
-                    sprintf(str, "%-7u %s\n", child_size, name);
-                    
-                    write(STDOUT_FILENO, str, strlen(str));
+                        sprintf(str, "%-7u %s\n", child_size, name);
+                        
+                        write(STDOUT_FILENO, str, strlen(str));
+                    }
+                }
+
+                // Child
+                else if (pid == 0) {
+                    close(fd[READ]);
+                    dup2(fd[WRITE], 999);
+                    close(fd[WRITE]);
+
+                    char max_depth[50];
+                    sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
+                    char B[50];
+                    sprintf(B, "%u", c->size);
+                    char* argv_[8] = {"simpledu", name, max_depth, c->all? "-a" : "", c->bytes? "-b" : "", "-B", B ,NULL};
+
+                    if (execve("simpledu", argv_, envp) == -1)
+                        perror("Error in exec\n");
+                }
+
+                // Error
+                else {
+                    perror("Error in fork\n");
+                    exit(3);
                 }
             }
-
-            // Child
-            else if (pid == 0) {
-                close(fd[READ]);
-                dup2(fd[WRITE], 999);
-                close(fd[WRITE]);
-
-                char max_depth[50];
-                sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
-
-                char* argv_[6] = {"simpledu", name, max_depth, c->all? "-a" : "", c->bytes? "-b" : "",NULL};
-
-                if (execve("simpledu", argv_, envp) == -1)
-                    perror("Error in exec\n");
-            }
-
-            // Error
-            else {
-                perror("Error in fork\n");
-                exit(3);
-            }
+                
         }
     }
 
