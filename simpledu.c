@@ -134,11 +134,16 @@ int main(int argc, char* argv[], char* envp[]) {
                     int child_size;
 
                     close(fd[WRITE]);
-
+                    
                     read(fd[READ], &child_size, sizeof(int));
 
-                    folder_size += child_size;
+                    if(!c->separate_dirs ) //-S
+                    {
+                        folder_size += child_size;
 
+                    }    
+
+                
                     if (c->max_depth > 0) {
                         char str[200];
 
@@ -158,7 +163,7 @@ int main(int argc, char* argv[], char* envp[]) {
                     sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
                     char B[50];
                     sprintf(B, "%u", c->size);
-                    char* argv_[8] = {"simpledu", name, max_depth, c->all? "-a" : "", c->bytes? "-b" : "", "-B", B ,NULL};
+                    char* argv_[9] = {"simpledu", name, max_depth, c->all? "-a" : "", c->bytes? "-b" : "", c->separate_dirs? "-S" : "", "-B", B ,NULL};
 
                     if (execv("simpledu", argv_) == -1)
                         perror("Error in exec\n");
@@ -176,7 +181,6 @@ int main(int argc, char* argv[], char* envp[]) {
 
     char tmp[27];
     sprintf(tmp, "%d", getpid());
-
     write(999, &folder_size, sizeof(int));
 
     wait(NULL);
