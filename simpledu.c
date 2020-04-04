@@ -59,11 +59,20 @@ int main(int argc, char* argv[], char* envp[]) {
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
 
-        if (lstat(name, &stat_buf) == -1) {
-            perror("lstat ERROR");
-            exit(1);
+        if(c->dereference){
+            if (stat(name, &stat_buf) == -1) {
+                perror("lstat ERROR");
+                exit(1);
+            }
+        }
+        else{
+            if (lstat(name, &stat_buf) == -1) {
+                perror("lstat ERROR");
+                exit(1);
+            }
         }
 
+        
         int size;
         double aux;
         double multiplier = stat_buf.st_blocks != 0? 512.0 / (double)c->size : 1;
@@ -80,11 +89,11 @@ int main(int argc, char* argv[], char* envp[]) {
         }
             
 
-        if (S_ISLNK(stat_buf.st_mode))
-            break;
+        //if (S_ISLNK(stat_buf.st_mode))
+            //break;
 
         // File
-        if (S_ISREG(stat_buf.st_mode)) {
+        if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
             char str[200];
 
             sprintf(str, "%-7u %s\n", size, name);
@@ -96,7 +105,7 @@ int main(int argc, char* argv[], char* envp[]) {
         }
         
         // Directory
-        else if (S_ISDIR(stat_buf.st_mode)) {
+        else if (S_ISDIR(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
 
