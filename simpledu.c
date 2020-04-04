@@ -15,6 +15,7 @@
 
 #define READ 0
 #define WRITE 1
+#define envPid  "envPid"
 
 int main(int argc, char* argv[], char* envp[]) {
     DIR *dirp;
@@ -24,6 +25,10 @@ int main(int argc, char* argv[], char* envp[]) {
     flags* c = flags_constructor();
     int folder_size = 0;
     int fd[2];
+    char size_currentDir[50];
+    bool iamfather = false;
+
+
 
     if (argc > 9) {
         perror("Usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
@@ -34,8 +39,21 @@ int main(int argc, char* argv[], char* envp[]) {
     
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
-        exit(2);
+        exit(1);
     } 
+
+    if(getenv("envPid") == NULL){ //Sou pai
+        char env[50];
+        sprintf(env, "%d", getpid());
+        if(setenv("envPid", env, 0) == -1)
+            exit(1);
+        //printf("ENTREI\n");
+        iamfather = true;
+    }
+    /*else{
+        printf("NAO SOU FILHO \n ");
+    }*/
+
 
     while ((direntp = readdir(dirp)) != NULL) {
         // Format path for each directory/file
@@ -43,7 +61,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
         if (lstat(name, &stat_buf) == -1) {
             perror("lstat ERROR");
-            exit(3);
+            exit(1);
         }
 
         int size;
@@ -102,14 +120,10 @@ int main(int argc, char* argv[], char* envp[]) {
                     else size = (int)aux;       
                 }
 
-                char str[200];
-
-                sprintf(str, "%-7u %s\n", size, name);
-
-                if (c->max_depth > 0 && c->all)
-                    write(STDOUT_FILENO, str, strlen(str));
 
                 folder_size += size;
+
+
             }
 
             else{
@@ -146,7 +160,7 @@ int main(int argc, char* argv[], char* envp[]) {
                     sprintf(B, "%u", c->size);
                     char* argv_[8] = {"simpledu", name, max_depth, c->all? "-a" : "", c->bytes? "-b" : "", "-B", B ,NULL};
 
-                    if (execve("simpledu", argv_, envp) == -1)
+                    if (execv("simpledu", argv_) == -1)
                         perror("Error in exec\n");
                 }
 
@@ -167,6 +181,11 @@ int main(int argc, char* argv[], char* envp[]) {
 
     wait(NULL);
     
+    if(iamfather){
+        sprintf(size_currentDir, "%-7u .\n", folder_size);
+        write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
+    }
+
     closedir(dirp); 
     close(fd[READ]);
     close(fd[WRITE]);
