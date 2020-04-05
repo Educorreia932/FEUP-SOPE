@@ -89,9 +89,6 @@ int main(int argc, char* argv[], char* envp[]) {
         }
             
 
-        //if (S_ISLNK(stat_buf.st_mode))
-            //break;
-
         // File
         if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
             char str[200];
@@ -195,7 +192,10 @@ int main(int argc, char* argv[], char* envp[]) {
     wait(NULL);
     
     if(iamfather){
-        sprintf(size_currentDir, "%-7u .\n", folder_size);
+        char cpyname[100];
+        strncpy(cpyname, name, strlen(name)-3);
+        cpyname[strlen(name)-3] = '\0';
+        sprintf(size_currentDir, "%-7u %s\n", folder_size, cpyname);
         write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
     }
 
