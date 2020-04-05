@@ -70,7 +70,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
 
         else if (strcmp(argv[i], "-l")){ // Checking for invalid arguments
             printf("simpledu: invalid option %s\n", argv[i]);
-            exit(2);
+            exit(1);
         }
     }
 }

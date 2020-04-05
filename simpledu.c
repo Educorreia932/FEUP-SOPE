@@ -1,34 +1,28 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <sys/types.h> 
 #include <sys/wait.h> 
-#include <unistd.h> 
-#include <errno.h> 
-#include <stdbool.h>
+ #include <errno.h> 
 #include <limits.h>
+#include <signal.h>
 
-#include "flags.h"
 #include "utils.h"
 
 #define READ 0
 #define WRITE 1
-#define envPid  "envPid"
+
 
 int main(int argc, char* argv[], char* envp[]) {
-    DIR *dirp;
-    struct dirent *direntp;
-    struct stat stat_buf;
     char name[300]; 
-    flags* c = flags_constructor();
     int folder_size = 0;
     int fd[2];
     char size_currentDir[50];
-    bool iamfather = false;
+    
 
+    //Signal Handler
+    signal(SIGINT, handle_sigint); 
 
+    //Check Flags
+    flags* c = flags_constructor();
 
     if (argc > 9) {
         perror("Usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
@@ -36,67 +30,57 @@ int main(int argc, char* argv[], char* envp[]) {
     }
 
     parse_flags(argc, argv, c);
+
+    //Checks if is father
+    bool iamfather = isFather(envp);
+
     
+
+    //Open Dir
+    DIR *dirp;
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
         exit(1);
     } 
 
-    if(getenv("envPid") == NULL){ //Sou pai
-        char env[50];
-        sprintf(env, "%d", getpid());
-        if(setenv("envPid", env, 0) == -1)
-            exit(1);
-        //printf("ENTREI\n");
-        iamfather = true;
-    }
-    /*else{
-        printf("NAO SOU FILHO \n ");
-    }*/
-
-
+    //Read Dir Loop
+    struct dirent *direntp;
     while ((direntp = readdir(dirp)) != NULL) {
+
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
 
-        if(c->dereference){
+        //Info
+        struct stat stat_buf;
+        if(c->dereference){ //Stat if -S active
+
             if (stat(name, &stat_buf) == -1) {
                 perror("lstat ERROR");
                 exit(1);
             }
         }
-        else{
+        else{ //Lstat if -S not active
+
             if (lstat(name, &stat_buf) == -1) {
                 perror("lstat ERROR");
                 exit(1);
             }
         }
 
-        
-        int size;
-        double aux;
-        double multiplier = stat_buf.st_blocks != 0? 512.0 / (double)c->size : 1;
-
-        if (c->bytes)
-            size = stat_buf.st_size;
-
-        else{
-            aux = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : 1;  
-
-            if(aux - (int)aux > 0)
-                size = (int)aux +1;
-            else size = (int)aux;       
-        }
+        //Caclulates Size
+        int size = calculateSize(stat_buf, c);
             
 
-        // File
+        // FILE (or symb link if -S)
         if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
-            char str[200];
-
-            sprintf(str, "%-7u %s\n", size, name);
-
-            if (c->max_depth > 0 && c->all)
+            
+            //Format print with size
+            if (c->max_depth > 0 && c->all){
+                char str[200];
+                sprintf(str, "%-7u %s\n", size, name);
                 write(STDOUT_FILENO, str, strlen(str));
+            }
+                
 
             folder_size += size;
         }
@@ -192,10 +176,12 @@ int main(int argc, char* argv[], char* envp[]) {
     wait(NULL);
     
     if(iamfather){
+        //cpyname = name of current directory ready for print
         char cpyname[100];
-        strncpy(cpyname, name, strlen(name)-3);
-        cpyname[strlen(name)-3] = '\0';
+        strncpy(cpyname, name, strlen(name)-3); //remove /..
+        cpyname[strlen(name)-3] = '\0'; //add termination character
         sprintf(size_currentDir, "%-7u %s\n", folder_size, cpyname);
+
         write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
     }
 
