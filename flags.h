@@ -9,6 +9,7 @@
 
 #define DEFAULT_BLOCK_SIZE 1024
 
+
 typedef struct {
     char* path; 
     bool all; // Also include files

@@ -18,8 +18,11 @@ int main(int argc, char* argv[], char* envp[]) {
     char size_currentDir[50];
     Queue_t* file_descriptors = new_queue();
 
+    idgroup = getpgid(getpid());
+
     //Signal Handler
-    signal(SIGINT, handle_sigint); 
+    if(isOriginal)
+        signal(SIGINT, handle_sigint); 
 
     //Check Flags
     flags* c = flags_constructor();
@@ -91,8 +94,6 @@ int main(int argc, char* argv[], char* envp[]) {
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
 
-            pid_t pid = -1;
-
             if (!strcmp(direntp->d_name, ".")){
                 calculateSize(stat_buf, c);
 
@@ -100,17 +101,31 @@ int main(int argc, char* argv[], char* envp[]) {
             }
 
             else {
+                pid_t pid = -1;
                 pid = fork();
+
+                //Checks if firstChild
+                bool first_child = false;
+                
+                if(original)
+                    first_child = true;   
 
                 // Parent
                 if (pid > 0) {
                     int child_size;
 
                     close(fd[WRITE]);
+                    
+                    if(original)
+                    {
+                        char ready;
+                        while(read(fd[READ], &ready, sizeof(char)) == 0);
+                        idgroup = pid;
+                    }
 
-                    read(fd[READ], &child_size, sizeof(int));
+                    while(read(fd[READ], &child_size, sizeof(int)) == 0);
 
-                    if (!c->separate_dirs ) 
+                    if (!c->separate_dirs ) //-S
                         folder_size += child_size;
                 
                     if (c->max_depth > 0) {
@@ -130,6 +145,17 @@ int main(int argc, char* argv[], char* envp[]) {
                     close(fd[READ]);
                     dup2(fd[WRITE], 999);
                     close(fd[WRITE]);
+
+                    if(first_child)
+                    {
+                        char ready = 'y';
+                        setpgid(0, getpid());
+                        write(999, &ready, sizeof(char)); //Tells father group is set
+                    }
+                    else
+                        setpgid(pid, idgroup);
+                    
+                    
 
                     char *argv_[50];
                     create_child_command(c, name, argv_);
