@@ -44,12 +44,14 @@ int calculateSize(struct stat stat_buf, flags* c){
         size = stat_buf.st_size;
 
     else{
-        aux = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : 1;  
+        aux = stat_buf.st_blocks * multiplier;  
 
         //ceil(aux)
         if(aux - (int)aux > 0)
             size = (int)aux +1;
-        else size = (int)aux;       
+
+        else 
+            size = (int)aux;       
     }
 
     return size;

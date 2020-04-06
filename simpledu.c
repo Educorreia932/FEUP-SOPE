@@ -49,19 +49,17 @@ int main(int argc, char* argv[], char* envp[]) {
 
         //Info
         struct stat stat_buf;
-        if(c->dereference){ //Stat if -S active
 
-            if (stat(name, &stat_buf) == -1) {
-                perror("lstat ERROR");
-                exit(1);
-            }
+        // Stat if -S active
+        if (c->dereference && stat(name, &stat_buf) == -1){ 
+            perror("lstat ERROR");
+            exit(1);
         }
-        else{ //Lstat if -S not active
 
-            if (lstat(name, &stat_buf) == -1) {
-                perror("lstat ERROR");
-                exit(1);
-            }
+        // Lstat if -S not active
+        else if (lstat(name, &stat_buf) == -1) {
+            perror("lstat ERROR");
+            exit(1);
         }
 
         // Calculates size
@@ -69,7 +67,6 @@ int main(int argc, char* argv[], char* envp[]) {
 
         // FILE (or symb link if -S)
         if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
-            
             // Format print with size
             if (c->max_depth > 0 && c->all){
                 char str[200];
@@ -95,19 +92,13 @@ int main(int argc, char* argv[], char* envp[]) {
             else if (folder_type == CURRENT) {
                 int size;
                 double aux;
-                double multiplier = stat_buf.st_blocks != 0? 512.0 / (double)c->size : 1;
+                double multiplier = 512.0 / c->size;
 
                 if (c->bytes)
                     size = stat_buf.st_size;
 
-                else {
-                    aux = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : 1;  
-
-                    if(aux - (int)aux > 0)
-                        size = (int)aux +1;
-
-                    else size = (int)aux;       
-                }
+                else
+                    size = stat_buf.st_blocks * multiplier;  
 
                 folder_size += size;
             }
@@ -123,7 +114,7 @@ int main(int argc, char* argv[], char* envp[]) {
                     
                     read(fd[READ], &child_size, sizeof(int));
 
-                    if(!c->separate_dirs ) //-S
+                    if (!c->separate_dirs ) //-S
                         folder_size += child_size;
                 
                     if (c->max_depth > 0) {
