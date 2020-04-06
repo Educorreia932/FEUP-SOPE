@@ -1,21 +1,22 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/wait.h> 
- #include <errno.h> 
+#include <errno.h> 
 #include <limits.h>
 #include <signal.h>
 
 #include "utils.h"
+#include "queue.h"
 
 #define READ 0
 #define WRITE 1
-
 
 int main(int argc, char* argv[], char* envp[]) {
     char name[300]; 
     int folder_size = 0;
     int fd[2];
     char size_currentDir[50];
+    Queue_t* file_descriptors = new_queue();
 
     //Signal Handler
     signal(SIGINT, handle_sigint); 
@@ -35,6 +36,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
     // Open directory
     DIR *dirp;
+
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
         exit(1);
@@ -50,7 +52,7 @@ int main(int argc, char* argv[], char* envp[]) {
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
 
-        //Info
+        // Info
         struct stat stat_buf;
 
         // Stat if -S active
@@ -105,10 +107,10 @@ int main(int argc, char* argv[], char* envp[]) {
                     int child_size;
 
                     close(fd[WRITE]);
-                    
+
                     read(fd[READ], &child_size, sizeof(int));
 
-                    if (!c->separate_dirs ) //-S
+                    if (!c->separate_dirs ) 
                         folder_size += child_size;
                 
                     if (c->max_depth > 0) {
@@ -139,14 +141,13 @@ int main(int argc, char* argv[], char* envp[]) {
                 // Error
                 else {
                     perror("Error in fork\n");
-                    exit(3);
+                    exit(1);
                 }
             }
                 
         }
     }
 
-    wait(NULL);
 
     if (original) {
         if (!c->bytes)

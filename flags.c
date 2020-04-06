@@ -19,16 +19,20 @@ void parse_flags(int argc, char* argv[], flags* c) {
         if (!strcmp(argv[i], ""))
             continue;
 
-        if (argv[i][0] != '-' && (strcmp(argv[i - 1], "-B"))) // Path
+        // Path
+        if (argv[i][0] != '-' && (strcmp(argv[i - 1], "-B"))) 
             c->path = argv[i];
 
-        else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--all")) // Include files
+        // Include files
+        else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--all")) 
             c->all = true;
 
-        else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--bytes")) // Real number of bytes
+        // Real number of bytes
+        else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--bytes")) 
             c->bytes = true;
 
-        else if (!strcmp(argv[i], "-B") && (i + 1 < argc)) { // Block size (bytes)
+        // Block size (bytes)
+        else if (!strcmp(argv[i], "-B") && (i + 1 < argc)) { 
             char* argument = argv[i + 1];
             char* size;
 
@@ -45,10 +49,12 @@ void parse_flags(int argc, char* argv[], flags* c) {
             i++;
         }
 
-        else if (!strcmp(argv[i], "-L") || !strcmp(argv[i], "--dereference")) // Symbolic links
+        // Symbolic links
+        else if (!strcmp(argv[i], "-L") || !strcmp(argv[i], "--dereference")) 
             c->dereference = true;
 
-        else if (!strcmp(argv[i], "-S") || !strcmp(argv[i], "--separate-dirs")) // Exclude sub directory info
+        // Exclude sub directory info
+        else if (!strcmp(argv[i], "-S") || !strcmp(argv[i], "--separate-dirs")) 
             c->separate_dirs = true;
 
         else if (strstr(argv[i], "--max-depth=") != NULL) { // Directory max depth
@@ -75,7 +81,6 @@ void parse_flags(int argc, char* argv[], flags* c) {
 }
 
 void create_child_command(flags *c, char *name, char **dest){
-
     char max_depth[50];
     sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
 
@@ -96,13 +101,15 @@ void create_child_command(flags *c, char *name, char **dest){
         dest[++cnt] = B;
     }
 
-    if (c->separate_dirs){ dest[++cnt] = "-S"; }
-    if (c->dereference) { dest[++cnt] = "-L"; }
+    if (c->separate_dirs) 
+        dest[++cnt] = "-S"; 
+        
+    if (c->dereference)
+        dest[++cnt] = "-L";
     
     dest[++cnt] = NULL;
 }
 
-//-----DEBUG
 void print_flags(flags* c) {
     printf("Path: %s\n", c->path);
     printf("All: %s\n", c->all? "YES" : "NO");
