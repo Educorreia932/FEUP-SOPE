@@ -96,20 +96,11 @@ void create_child_command(flags *c, char *name, char **dest){
         dest[++cnt] = "-B";
         dest[++cnt] = B;
     }
-    
+
     if (c->separate_dirs){ dest[++cnt] = "-S"; }
+    if (c->dereference) { dest[++cnt] = "-L"; }
     
     dest[++cnt] = NULL;
-    // char* argv_[9] = {
-    //                   "simpledu", 
-    //                   name, 
-    //                   max_depth, 
-    //                   c->all? "-a" : "", 
-    //                   c->bytes? "-b" : "", 
-    //                   c->separate_dirs? "-S" : "", 
-    //                   "-B", B,
-    //                   NULL
-    //                   };
     
 }
 
