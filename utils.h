@@ -7,8 +7,14 @@
 #include <math.h>
 #include "flags.h"
 
-void handle_sigint(int sig) ;
+#define CURRENT 1
+#define PARENT 2
+
+void handle_sigint(int sig);
+
 bool check_folder(char* name);
-bool isFather(char* envp[]);
+
+bool isOriginal(char* envp[]);
+
 int calculateSize(struct stat stat_buf, flags* c);
 

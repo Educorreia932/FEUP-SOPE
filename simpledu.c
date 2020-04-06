@@ -16,7 +16,6 @@ int main(int argc, char* argv[], char* envp[]) {
     int folder_size = 0;
     int fd[2];
     char size_currentDir[50];
-    
 
     //Signal Handler
     signal(SIGINT, handle_sigint); 
@@ -31,19 +30,17 @@ int main(int argc, char* argv[], char* envp[]) {
 
     parse_flags(argc, argv, c);
 
-    //Checks if is father
-    bool iamfather = isFather(envp);
+    // Checks if this one is the original process
+    bool original = isOriginal(envp);
 
-    
-
-    //Open Dir
+    // Open directory
     DIR *dirp;
     if ((dirp = opendir(c->path)) == NULL) {
         perror(c->path);
         exit(1);
     } 
 
-    //Read Dir Loop
+    // Read contents of current directory
     struct dirent *direntp;
     while ((direntp = readdir(dirp)) != NULL) {
 
@@ -67,20 +64,18 @@ int main(int argc, char* argv[], char* envp[]) {
             }
         }
 
-        //Caclulates Size
+        // Calculates size
         int size = calculateSize(stat_buf, c);
-            
 
         // FILE (or symb link if -S)
         if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
             
-            //Format print with size
+            // Format print with size
             if (c->max_depth > 0 && c->all){
                 char str[200];
                 sprintf(str, "%-7u %s\n", size, name);
                 write(STDOUT_FILENO, str, strlen(str));
             }
-                
 
             folder_size += size;
         }
@@ -92,9 +87,12 @@ int main(int argc, char* argv[], char* envp[]) {
 
             pid_t pid = -1;
 
-            if (check_folder(name))
+            int folder_type = check_folder(name);
+
+            if (folder_type == PARENT)
                 continue;
-            else if (name[strlen(name) - 1] == '.' && name[strlen(name) - 2] == '/'){
+
+            else if (folder_type == CURRENT) {
                 int size;
                 double aux;
                 double multiplier = stat_buf.st_blocks != 0? 512.0 / (double)c->size : 1;
@@ -102,18 +100,16 @@ int main(int argc, char* argv[], char* envp[]) {
                 if (c->bytes)
                     size = stat_buf.st_size;
 
-                else{
+                else {
                     aux = stat_buf.st_blocks != 0? stat_buf.st_blocks * multiplier : 1;  
 
                     if(aux - (int)aux > 0)
                         size = (int)aux +1;
+
                     else size = (int)aux;       
                 }
 
-
                 folder_size += size;
-
-
             }
 
             else{
@@ -128,11 +124,7 @@ int main(int argc, char* argv[], char* envp[]) {
                     read(fd[READ], &child_size, sizeof(int));
 
                     if(!c->separate_dirs ) //-S
-                    {
                         folder_size += child_size;
-
-                    }    
-
                 
                     if (c->max_depth > 0) {
                         char str[200];
@@ -172,8 +164,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
     wait(NULL);
     
-    if(iamfather){
-    
+    if (original) {
         sprintf(size_currentDir, "%-7u %s\n", folder_size, c->path);
 
         write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
