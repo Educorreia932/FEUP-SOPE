@@ -1,6 +1,5 @@
 #include "flags.h"
 
-
 flags* flags_constructor() {
     flags* c = (flags*) malloc(sizeof(flags));
 
@@ -101,7 +100,6 @@ void create_child_command(flags *c, char *name, char **dest){
     if (c->dereference) { dest[++cnt] = "-L"; }
     
     dest[++cnt] = NULL;
-    
 }
 
 //-----DEBUG

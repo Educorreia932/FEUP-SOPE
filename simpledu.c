@@ -42,7 +42,10 @@ int main(int argc, char* argv[], char* envp[]) {
 
     // Read contents of current directory
     struct dirent *direntp;
+
     while ((direntp = readdir(dirp)) != NULL) {
+        if (!strcmp(direntp->d_name, "..")) 
+            continue;
 
         // Format path for each directory/file
         sprintf(name, "%s/%s", c->path, direntp->d_name);
@@ -70,6 +73,10 @@ int main(int argc, char* argv[], char* envp[]) {
             // Format print with size
             if (c->max_depth > 0 && c->all){
                 char str[200];
+
+                if (!c->bytes)
+                    size = (size + c->size - 1) / c->size;
+
                 sprintf(str, "%-7u %s\n", size, name);
                 write(STDOUT_FILENO, str, strlen(str));
             }
@@ -84,30 +91,14 @@ int main(int argc, char* argv[], char* envp[]) {
 
             pid_t pid = -1;
 
-            int folder_type = check_folder(name);
-
-            if (folder_type == PARENT)
-                continue;
-
-            else if (folder_type == CURRENT) {
-                int size;
-                double aux;
-                double multiplier = 512.0 / c->size;
-
-                if (c->bytes)
-                    size = stat_buf.st_size;
-
-                else {
-                    size = stat_buf.st_blocks * 512.0 / c->size;
-
-                    if ((stat_buf.st_blocks * 512) % c->size != 0)
-                        size++;
-                }
+            if (folder_type == CURRENT) {
+                printf("%s\n", direntp->d_name);
+                calculateSize(stat_buf, c);
 
                 folder_size += size;
             }
 
-            else{
+            else {
                 pid = fork();
 
                 // Parent
@@ -123,6 +114,9 @@ int main(int argc, char* argv[], char* envp[]) {
                 
                     if (c->max_depth > 0) {
                         char str[200];
+
+                        if (!c->bytes)
+                            child_size = (child_size + c->size - 1) / c->size;
 
                         sprintf(str, "%-7u %s\n", child_size, name);
                         
@@ -153,20 +147,26 @@ int main(int argc, char* argv[], char* envp[]) {
         }
     }
 
-    char tmp[27];
-    sprintf(tmp, "%d", getpid());
-    write(999, &folder_size, sizeof(int));
-
     wait(NULL);
-    
+
     if (original) {
+        if (!c->bytes)
+            folder_size = (folder_size + c->size - 1) / c->size;
+
         sprintf(size_currentDir, "%-7u %s\n", folder_size, c->path);
 
         write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
     }
 
+    else {
+        char tmp[27];
+        sprintf(tmp, "%d", getpid());
+        write(999, &folder_size, sizeof(int));
+    }
+
     closedir(dirp); 
     close(fd[READ]);
     close(fd[WRITE]);
+
     exit(0);
 }

@@ -12,8 +12,6 @@
 
 void handle_sigint(int sig);
 
-bool check_folder(char* name);
-
 bool isOriginal(char* envp[]);
 
 int calculateSize(struct stat stat_buf, flags* c);
