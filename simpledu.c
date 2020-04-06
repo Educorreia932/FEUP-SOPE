@@ -72,7 +72,7 @@ int main(int argc, char* argv[], char* envp[]) {
         if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
             // Format print with size
             if (c->max_depth > 0 && c->all){
-                char str[200];
+                char str[400];
 
                 if (!c->bytes)
                     size = (size + c->size - 1) / c->size;
@@ -91,8 +91,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
             pid_t pid = -1;
 
-            if (folder_type == CURRENT) {
-                printf("%s\n", direntp->d_name);
+            if (!strcmp(direntp->d_name, ".")){
                 calculateSize(stat_buf, c);
 
                 folder_size += size;
@@ -113,7 +112,7 @@ int main(int argc, char* argv[], char* envp[]) {
                         folder_size += child_size;
                 
                     if (c->max_depth > 0) {
-                        char str[200];
+                        char str[400];
 
                         if (!c->bytes)
                             child_size = (child_size + c->size - 1) / c->size;
