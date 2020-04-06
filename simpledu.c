@@ -176,11 +176,8 @@ int main(int argc, char* argv[], char* envp[]) {
     wait(NULL);
     
     if(iamfather){
-        //cpyname = name of current directory ready for print
-        char cpyname[100];
-        strncpy(cpyname, name, strlen(name)-3); //remove /..
-        cpyname[strlen(name)-3] = '\0'; //add termination character
-        sprintf(size_currentDir, "%-7u %s\n", folder_size, cpyname);
+    
+        sprintf(size_currentDir, "%-7u %s\n", folder_size, c->path);
 
         write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
     }
