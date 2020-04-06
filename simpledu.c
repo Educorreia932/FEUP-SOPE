@@ -149,11 +149,8 @@ int main(int argc, char* argv[], char* envp[]) {
                     dup2(fd[WRITE], 999);
                     close(fd[WRITE]);
 
-                    char max_depth[50];
-                    sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
-                    char B[50];
-                    sprintf(B, "%u", c->size);
-                    char* argv_[9] = {"simpledu", name, max_depth, c->all? "-a" : "", c->bytes? "-b" : "", c->separate_dirs? "-S" : "", "-B", B ,NULL};
+                    char *argv_[50];
+                    create_child_command(c, name, argv_);
 
                     if (execv("simpledu", argv_) == -1)
                         perror("Error in exec\n");

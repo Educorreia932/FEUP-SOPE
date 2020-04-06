@@ -75,6 +75,44 @@ void parse_flags(int argc, char* argv[], flags* c) {
     }
 }
 
+void create_child_command(flags *c, char *name, char **dest){
+
+    char max_depth[50];
+    sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
+
+    dest[0] = "simpledu";
+    dest[1] = name;
+    dest[2] = max_depth;
+
+    int cnt = 2;
+    if (c->all) { dest[++cnt] = "-a"; }
+    if (c->bytes) { dest[++cnt] = "-b"; }
+    if (c->separate_dirs) { dest[++cnt] = "-S"; }
+
+    if (c->size != DEFAULT_BLOCK_SIZE) {
+        char B[25];
+        sprintf(B, "%u", c->size);
+
+        dest[++cnt] = "-B";
+        dest[++cnt] = B;
+    }
+    
+    if (c->separate_dirs){ dest[++cnt] = "-S"; }
+    
+    dest[++cnt] = NULL;
+    // char* argv_[9] = {
+    //                   "simpledu", 
+    //                   name, 
+    //                   max_depth, 
+    //                   c->all? "-a" : "", 
+    //                   c->bytes? "-b" : "", 
+    //                   c->separate_dirs? "-S" : "", 
+    //                   "-B", B,
+    //                   NULL
+    //                   };
+    
+}
+
 //-----DEBUG
 void print_flags(flags* c) {
     printf("Path: %s\n", c->path);

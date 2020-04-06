@@ -4,6 +4,7 @@
 #include <stdlib.h>    
 #include <sys/types.h> 
 #include <unistd.h>
+#include <math.h>
 #include "flags.h"
 
 void handle_sigint(int sig) ;

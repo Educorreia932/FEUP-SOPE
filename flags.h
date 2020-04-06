@@ -23,4 +23,6 @@ void parse_flags(int argc, char* argv[], flags* c);
 
 flags* flags_constructor();
 
+void create_child_command(flags *c, char *name, char **dest);
+
 void print_flags(flags* c);
