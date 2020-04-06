@@ -97,8 +97,12 @@ int main(int argc, char* argv[], char* envp[]) {
                 if (c->bytes)
                     size = stat_buf.st_size;
 
-                else
-                    size = stat_buf.st_blocks * multiplier;  
+                else {
+                    size = stat_buf.st_blocks * 512.0 / c->size;
+
+                    if ((stat_buf.st_blocks * 512) % c->size != 0)
+                        size++;
+                }
 
                 folder_size += size;
             }

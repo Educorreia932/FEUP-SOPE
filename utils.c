@@ -40,18 +40,15 @@ int calculateSize(struct stat stat_buf, flags* c){
     double aux;
     double multiplier = stat_buf.st_blocks != 0? 512.0 / (double)c->size : 1;
 
-    if (c->bytes) //if -b active
+    // If -b active
+    if (c->bytes) 
         size = stat_buf.st_size;
 
-    else{
-        aux = stat_buf.st_blocks * multiplier;  
+    else {
+        size = stat_buf.st_blocks * 512.0 / c->size;
 
-        //ceil(aux)
-        if(aux - (int)aux > 0)
-            size = (int)aux +1;
-
-        else 
-            size = (int)aux;       
+        if ((stat_buf.st_blocks * 512) % c->size != 0)
+            size++;
     }
 
     return size;
