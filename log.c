@@ -1,4 +1,4 @@
-#include "log.h"
+    #include "log.h"
 
 
 log_info *log_info_constructor() {
@@ -29,32 +29,32 @@ void get_log_filename(char* evnp[], char *filename){
 
 double get_instance(){
     
-    clock_t begin, end;
-    double elapsed;
+   struct timeval begin, end;
+    double start, final, elapsed;  
 
     char aux[50];
     if (getenv(TIME_ENV) != NULL){ //env has been set
         //char *ptr;
         sprintf(aux, "%s", getenv(TIME_ENV));
 
-        begin = strtol(aux, NULL, 10);
+        start = strtol(aux, NULL, 10);
 
     }
-    else { //oririnal process (needs to set envp)
+    else { //original process (needs to set envp)
         
         char t[50];
-        begin = clock();
-        sprintf(t,"%ld",begin);
+        gettimeofday(&begin, NULL);
+        start = (begin.tv_sec * 1000000u + begin.tv_usec) / 1.e6;
+        sprintf(t,"%u", start);
         if (setenv(TIME_ENV, t, 0) == -1){
             exit(1);
         }
 
     }
 
-    end = clock();
-
-    elapsed = (double) (end-begin) / CLOCKS_PER_SEC;
-
+    gettimeofday(&end, NULL);
+    final = (end.tv_sec * 1000000u + end.tv_usec) / 1.e6;
+    elapsed = final - start;
     return elapsed;
 }
 
@@ -90,7 +90,6 @@ void new_log( action act, int fd, log_info *l, char *str){
         case SEND_PIPE:
             sprintf(buff, "%f - %d - SEND_PIPE - %d\n", instance, pid, l->num);
             break;
-        
 
     }
     //printf("ali\n");

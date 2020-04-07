@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
+#include <sys/time.h>
 
 #define LOG_ENVP "LOG_FILENAME"
 #define DEFAULT_LOG_FILENAME "log.txt"
@@ -27,3 +27,4 @@ log_info *log_info_constructor();
 void get_log_filename(char *envp[], char *filename);
 void new_log( action act, int fd, log_info *info, char *str);
 void begin_time();
+double get_instance();
