@@ -54,7 +54,7 @@ void args_to_string(char **args, char *dest){
         //printf("auvboau %s\n",args[i]);
         strncat(line, args[i],512);
         strncat(line, " ",2);
-        printf("%s %s\n",args[i], line);
+        //printf("%s %s\n",args[i], line);
     }
     
     strcpy(dest, line);

@@ -188,10 +188,9 @@ int main(int argc, char* argv[], char* envp[]) {
                     char *argv_[50];
                     create_child_command(c, name, argv_);
 
-                    char str[100];
-                    args_to_string(argv_, str);
-                    new_log(CREATE, log_fd, NULL, str);
-
+                    char log_line[512];
+                    args_to_string(argv_, log_line);
+                    new_log(CREATE, log_fd, NULL, log_line);
         
                     if (execv("simpledu", argv_) == -1)
                         perror("Error in exec\n");
