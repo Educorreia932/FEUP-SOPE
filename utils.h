@@ -8,7 +8,9 @@
 #include <unistd.h>
 #include <math.h>
 #include <signal.h>
+
 #include "flags.h"
+#include "log.h"
 
 #define CURRENT 1
 #define PARENT 2

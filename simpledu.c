@@ -4,6 +4,7 @@
 #include <errno.h> 
 #include <limits.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "utils.h"
 #include "queue.h"
@@ -11,17 +12,20 @@
 #define READ 0
 #define WRITE 1
 
+static log_info *l;
+static int log_fd;
+
 int main(int argc, char* argv[], char* envp[]) {
     char name[300]; 
     int folder_size = 0;
     int fd[2];
     char size_currentDir[50];
-    Queue_t* file_descriptors = new_queue();
 
-    idgroup = getpgid(getpid());
+    // Checks if this one is the original process
+    bool original = isOriginal(envp);
 
     //Signal Handler
-    if(isOriginal)
+    if(original)
         signal(SIGINT, handle_sigint); 
 
     //Check Flags
@@ -34,8 +38,30 @@ int main(int argc, char* argv[], char* envp[]) {
 
     parse_flags(argc, argv, c);
 
-    // Checks if this one is the original process
-    bool original = isOriginal(envp);
+    
+    //Group ID
+    idgroup = getpgid(getpid());
+
+
+    //Log file
+    l = log_info_constructor();
+    char log_file[50];
+    get_log_filename(envp, log_file);
+
+    
+    if (original){
+        log_fd = open(log_file, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0644);
+        get_instance();
+    }
+    else {
+        log_fd = open(log_file, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    }
+
+    if (log_fd == -1) {
+        perror(log_file);
+        exit(1);
+    }
+    
 
     // Open directory
     DIR *dirp;
@@ -58,13 +84,13 @@ int main(int argc, char* argv[], char* envp[]) {
         // Info
         struct stat stat_buf;
 
-        // Stat if -S active
+        // Stat if -L active
         if (c->dereference && stat(name, &stat_buf) == -1){ 
             perror("lstat ERROR");
             exit(1);
         }
 
-        // Lstat if -S not active
+        // Lstat if -L not active
         else if (lstat(name, &stat_buf) == -1) {
             perror("lstat ERROR");
             exit(1);
@@ -73,9 +99,12 @@ int main(int argc, char* argv[], char* envp[]) {
         // Calculates size
         int size = calculateSize(stat_buf, c);
 
+
         // FILE (or symb link if -S)
-        if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
+        if (S_ISREG(stat_buf.st_mode) || (!c->dereference && S_ISLNK(stat_buf.st_mode) && c->all)) {
             // Format print with size
+            folder_size += size;
+
             if (c->max_depth > 0 && c->all){
                 char str[400];
 
@@ -83,20 +112,19 @@ int main(int argc, char* argv[], char* envp[]) {
                     size = (size + c->size - 1) / c->size;
 
                 sprintf(str, "%-7u %s\n", size, name);
+                new_log(ENTRY, log_fd, NULL, str);
                 write(STDOUT_FILENO, str, strlen(str));
             }
 
-            folder_size += size;
+            
         }
         
         // Directory
-        else if (S_ISDIR(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
+        else if (S_ISDIR(stat_buf.st_mode) ) {
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
 
             if (!strcmp(direntp->d_name, ".")){
-                calculateSize(stat_buf, c);
-
                 folder_size += size;
             }
 
@@ -107,7 +135,7 @@ int main(int argc, char* argv[], char* envp[]) {
                 //Checks if firstChild
                 bool first_child = false;
                 
-                if(original)
+                if(original && !first_child)
                     first_child = true;   
 
                 // Parent
