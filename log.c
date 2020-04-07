@@ -45,7 +45,7 @@ double get_instance(){
         char t[50];
         gettimeofday(&begin, NULL);
         start = (begin.tv_sec * 1000000u + begin.tv_usec) / 1.e6;
-        sprintf(t,"%u", start);
+        sprintf(t,"%f", start);
         if (setenv(TIME_ENV, t, 0) == -1){
             exit(1);
         }

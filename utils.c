@@ -45,6 +45,21 @@ bool isOriginal(char* envp[]) {
     return false; 
 } 
 
+void args_to_string(char **args, char *dest){
+
+    char line[512] = "";
+    
+    for(int i = 0; args[i] != NULL; i++){
+
+        //printf("auvboau %s\n",args[i]);
+        strncat(line, args[i],512);
+        strncat(line, " ",2);
+        printf("%s %s\n",args[i], line);
+    }
+    
+    strcpy(dest, line);
+}
+
 int calculateSize(struct stat stat_buf, flags* c) {
     int size;
 

@@ -21,5 +21,7 @@ void handle_sigint(int sig);
 
 bool isOriginal(char* envp[]);
 
+void args_to_string(char **args, char *dest);
+
 int calculateSize(struct stat stat_buf, flags* c);
 
