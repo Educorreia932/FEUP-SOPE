@@ -7,22 +7,19 @@ void handle_sigint(int sig) {
 
     bool valid_answer = false;
 
-    while(!valid_answer)
-    {
+    while(!valid_answer) {
         fflush(stdin);
         printf("\nAre you sure you want to cancel simpledu? (y/n) ");
 
         char answer;scanf(" %c", &answer);
 
-        if(answer == 'y')
-        {
+        if(answer == 'y') {
             valid_answer = true;
             kill(-idgroup, SIGTERM);
             exit(1);
         }
 
-        else if (answer == 'n')
-        {
+        else if (answer == 'n') {
             valid_answer = true;
             printf("\n");
             kill(-idgroup, SIGCONT);

@@ -1,6 +1,5 @@
 #include "log.h"
 
-
 log_info *log_info_constructor() {
 
     log_info* l = (log_info*) malloc(sizeof(log_info));

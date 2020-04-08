@@ -202,8 +202,7 @@ int main(int argc, char* argv[], char* envp[]) {
     }
 
     int cSize = 0;
-    while(!queue_is_empty(qfds))
-    {
+    while(!queue_is_empty(qfds)) {
         read(queue_pop(qfds), &cSize, sizeof(int));
         
         if (!c->separate_dirs ) //-S
@@ -216,12 +215,10 @@ int main(int argc, char* argv[], char* envp[]) {
 
     sprintf(size_currentDir, "%-7u %s\n", auxF, c->path);
 
-    if(c->max_depth > 0)
+    if(c->max_depth >= 0)
         write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
-    
 
     write(999, &folder_size, sizeof(int));
-
 
     closedir(dirp); 
     close(fd[READ]);
