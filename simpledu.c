@@ -39,16 +39,13 @@ int main(int argc, char* argv[], char* envp[]) {
 
     parse_flags(argc, argv, c);
 
-    
     //Group ID
     idgroup = getpgid(getpid());
-
 
     //Log file
     l = log_info_constructor();
     char log_file[50];
     get_log_filename(envp, log_file);
-
 
     // Open directory
     DIR *dirp;
@@ -83,7 +80,7 @@ int main(int argc, char* argv[], char* envp[]) {
         }
 
         // Lstat if -L not active
-        else{
+        else {
             if (lstat(name, &stat_buf) == -1) {
             perror("lstat ERROR");
             exit(1);}
@@ -92,9 +89,8 @@ int main(int argc, char* argv[], char* envp[]) {
         // Calculates size
         int size = calculateSize(stat_buf, c);
 
-
-        // FILE (or symb link if -L)
-        if (S_ISREG(stat_buf.st_mode) || S_ISLNK(stat_buf.st_mode)) {
+        // FILE (or symb link if -S)
+        if (S_ISREG(stat_buf.st_mode) || (c->dereference && S_ISLNK(stat_buf.st_mode))) {
             // Format print with size
             folder_size += size;
 
@@ -104,10 +100,13 @@ int main(int argc, char* argv[], char* envp[]) {
                 if (!c->bytes)
                     size = (size + c->size - 1) / c->size;
 
+                else
+                    size /= c->size;
+
                 sprintf(str, "%-7u %s\n", size, name);
                 //new_log(ENTRY, log_fd, NULL, str);
                 write(STDOUT_FILENO, str, strlen(str));
-            } 
+            }
         }
         
         // Directory
@@ -115,9 +114,8 @@ int main(int argc, char* argv[], char* envp[]) {
             if (pipe(fd) < 0) 
                 perror("Pipe error %s\n");  
 
-            if (!strcmp(direntp->d_name, ".")){
+            if (!strcmp(direntp->d_name, "."))
                 folder_size += size;
-            }
 
             else {
                 pid_t pid = -1;
@@ -151,12 +149,10 @@ int main(int argc, char* argv[], char* envp[]) {
 
                     dup2(fd[WRITE], 999);
 
-                    if(close(fd[WRITE]) == -1){
+                    if(close(fd[WRITE]) == -1)
                         exit(1);
-                    }   
 
-                    if(original && numChildren == 1)
-                    {
+                    if(original && numChildren == 1) {
                         char ready = 'y';
                         setpgid(0, getpid());
                         write(999, &ready, sizeof(char)); //Tells father group is set
@@ -218,8 +214,9 @@ int main(int argc, char* argv[], char* envp[]) {
 
     //new_log(EXIT, 0, NULL, NULL, original);
 
-    if(original)
+    if (original)
         exit(0);
+
     else
         _exit(0);
 }
