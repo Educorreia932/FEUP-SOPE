@@ -75,23 +75,26 @@ int main(int argc, char* argv[], char* envp[]) {
         struct stat stat_buf;
 
         // Stat if -L active
-        if (c->dereference && stat(name, &stat_buf) == -1){ 
-            perror("lstat ERROR");
-            exit(1);
+        if (c->dereference) {
+            if (stat(name, &stat_buf) == -1){ 
+                perror("stat ERROR");
+                exit(1);
+            }
         }
 
         // Lstat if -L not active
-        else if (lstat(name, &stat_buf) == -1) {
+        else{
+            if (lstat(name, &stat_buf) == -1) {
             perror("lstat ERROR");
-            exit(1);
+            exit(1);}
         }
 
         // Calculates size
         int size = calculateSize(stat_buf, c);
 
 
-        // FILE (or symb link if -S)
-        if (S_ISREG(stat_buf.st_mode) || (!c->dereference && S_ISLNK(stat_buf.st_mode))) {
+        // FILE (or symb link if -L)
+        if (S_ISREG(stat_buf.st_mode) || S_ISLNK(stat_buf.st_mode)) {
             // Format print with size
             folder_size += size;
 
@@ -104,9 +107,7 @@ int main(int argc, char* argv[], char* envp[]) {
                 sprintf(str, "%-7u %s\n", size, name);
                 //new_log(ENTRY, log_fd, NULL, str);
                 write(STDOUT_FILENO, str, strlen(str));
-            }
-
-            
+            } 
         }
         
         // Directory
@@ -140,14 +141,6 @@ int main(int argc, char* argv[], char* envp[]) {
                         while(read(fd[READ], &ready, sizeof(char)) == 0);
                         idgroup = pid;
                     }
-
-                   //while(read(fd[READ], &child_size, sizeof(int)) == 0);
-
-                    //if (!c->separate_dirs ) //-S
-                      //  folder_size += child_size;
-                      
-                      
-                
                 }
 
                 // Child
@@ -189,7 +182,6 @@ int main(int argc, char* argv[], char* envp[]) {
                     exit(1);
                 }
             }
-                
         }
     }
 
