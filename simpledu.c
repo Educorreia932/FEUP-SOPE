@@ -20,6 +20,7 @@ int main(int argc, char* argv[], char* envp[]) {
     int folder_size = 0;
     int fd[2];
     char size_currentDir[50];
+    int numChildren = 0;
 
     // Checks if this one is the original process
     bool original = isOriginal(envp);
@@ -38,6 +39,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
     parse_flags(argc, argv, c);
 
+    
     //Group ID
     idgroup = getpgid(getpid());
 
@@ -46,23 +48,6 @@ int main(int argc, char* argv[], char* envp[]) {
     l = log_info_constructor();
     char log_file[50];
     get_log_filename(envp, log_file);
-
-    
-    if (original){
-        log_fd = open(log_file, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0644);
-        get_instance();
-    }
-    else {
-        log_fd = open(log_file, O_WRONLY | O_CREAT | O_APPEND, 0644);
-    }
-
-    if (log_fd == -1) {
-        perror(log_file);
-        exit(1);
-    }
-    
-    //Checks if firstChild
-    bool first_child = false;    
 
 
     // Open directory
@@ -76,8 +61,8 @@ int main(int argc, char* argv[], char* envp[]) {
     // Read contents of current directory
     struct dirent *direntp;
 
-    //queue for fds
-    Queue_t * fds_queue = new_queue();
+    //QUEUE of fds
+    Queue_t *qfds = new_queue();
 
     while ((direntp = readdir(dirp)) != NULL) {
         if (!strcmp(direntp->d_name, "..")) 
@@ -134,38 +119,47 @@ int main(int argc, char* argv[], char* envp[]) {
             }
 
             else {
-                
-                dup2(fd[WRITE], 999);
-                
-                queue_push_back(fds_queue, fd[READ]);
-
                 pid_t pid = -1;
+                numChildren++;
                 pid = fork();
-                
-
-                if(original && !first_child)
-                    first_child = true;   
 
                 // Parent
                 if (pid > 0) {
                     int child_size;
 
-                    
-                    
-                    if(original)
+                    if(close(fd[WRITE]) == -1){
+                        exit(1);
+                    }    
+
+                    queue_push_back(qfds, fd[READ]);
+
+                    if(original && (numChildren == 1))
                     {
                         char ready;
                         while(read(fd[READ], &ready, sizeof(char)) == 0);
                         idgroup = pid;
                     }
-                    
+
+                   //while(read(fd[READ], &child_size, sizeof(int)) == 0);
+
+                    //if (!c->separate_dirs ) //-S
+                      //  folder_size += child_size;
+                
                 }
 
                 // Child
-                else if (pid == 0) {
-                   //close(fd[READ]);
+                else if (pid == 0) {                    
                     
-                    if(first_child)
+                    if(close(fd[READ]) == -1)
+                        exit(1);
+
+                    dup2(fd[WRITE], 999);
+
+                    if(close(fd[WRITE]) == -1){
+                        exit(1);
+                    }   
+
+                    if(original && numChildren == 1)
                     {
                         char ready = 'y';
                         setpgid(0, getpid());
@@ -178,10 +172,9 @@ int main(int argc, char* argv[], char* envp[]) {
                     char *argv_[50];
                     create_child_command(c, name, argv_);
 
-                    char str[100];
-                    //args_to_string(argv_, str);
-                    //new_log(CREATE, log_fd, NULL, str);
-
+                    char log_line[512];
+                    args_to_string(argv_, log_line);
+                    //new_log(CREATE, log_fd, NULL, log_line);
         
                     if (execv("simpledu", argv_) == -1)
                         perror("Error in exec\n");
@@ -197,43 +190,37 @@ int main(int argc, char* argv[], char* envp[]) {
         }
     }
 
-    
     pid_t wpid;
     int status;
-    int child_size;
 
-    while ((wpid = wait(&status)) > 0);
-    
-    //Read from all children
-    while(!queue_is_empty(fds_queue))
-    {
-       if(read(queue_pop(fds_queue), &child_size, sizeof(int)) < 0)
-        {
-            exit(1);
-        }
-        
-        if(!c->separate_dirs)
-            folder_size += child_size;
-    }
-    
-
-    if (c->max_depth > 0) {
-        int folder_aux;
-        if (!c->bytes)
-            folder_aux= (folder_size + c->size - 1) / c->size;
-
-        sprintf(size_currentDir, "%-7u %s\n", folder_aux, c->path);
-
-        write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
+    while(numChildren != 0){
+        wait(NULL);
+        numChildren--;
     }
 
+    
+    if (!c->bytes)
+        folder_size = (folder_size + c->size - 1) / c->size;
 
-   write(999, &folder_size, sizeof(int));
+    sprintf(size_currentDir, "%-7u %s\n", folder_size, c->path);
+
+    write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
+    
+
+    
+    char tmp[27];
+    sprintf(tmp, "%d", getpid());
+    //write(999, &folder_size, sizeof(int));
+
 
     closedir(dirp); 
     close(fd[READ]);
     close(fd[WRITE]);
 
-    exit(0);
+    //new_log(EXIT, 0, NULL, NULL, original);
 
+    if(original)
+        exit(0);
+    else
+        _exit(0);
 }
