@@ -1,5 +1,4 @@
-    #include "log.h"
-
+#include "log.h"
 
 log_info *log_info_constructor() {
 
@@ -58,7 +57,20 @@ double get_instance(){
     return elapsed;
 }
 
-void new_log( action act, int fd, log_info *l, char *str){
+void new_log( action act, int fd, log_info *l, char *str, bool original){
+    int log_fd;
+
+    if (original){
+        log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND , 0644);
+        get_instance();
+    }
+    else {
+        log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    }
+    if (log_fd == -1) {
+    perror(DEFAULT_LOG_FILENAME);
+    exit(1);
+    }
 
     char buff[MAX_BUFF_SIZE];
 
@@ -76,7 +88,7 @@ void new_log( action act, int fd, log_info *l, char *str){
             sprintf(buff, "%f - %u - CREATE - %s\n", instance, pid, str);
             break;
         case EXIT:
-            sprintf(buff, "%f - %u - EXIT - %d\n", instance, pid, l->num);
+            sprintf(buff, "%f - %u - EXIT - %d\n", instance, pid, 0);
             break;
         case RECV_SIGNAL:
             sprintf(buff, "%f - %d - RECV_SIGNAL - %s\n", instance,pid, str);
@@ -94,7 +106,7 @@ void new_log( action act, int fd, log_info *l, char *str){
     }
     //printf("ali\n");
     int w = 0;
-    if ((w = write(fd, buff, strlen(buff))) < 0){
+    if ((w = write(log_fd, buff, strlen(buff))) < 0){
         perror("write error");
         exit(1);
     }

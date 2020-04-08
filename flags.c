@@ -82,7 +82,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
 
 void create_child_command(flags *c, char *name, char **dest){
     char max_depth[50];
-    sprintf(max_depth, "--max-depth=%u", c->max_depth - 1);
+    sprintf(max_depth, "--max-depth=%d", c->max_depth - 1);
 
     dest[0] = "simpledu";
     dest[1] = name;
