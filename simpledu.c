@@ -91,7 +91,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
 
         // FILE (or symb link if -S)
-        if (S_ISREG(stat_buf.st_mode) || (!c->dereference && S_ISLNK(stat_buf.st_mode) && c->all)) {
+        if (S_ISREG(stat_buf.st_mode) || (!c->dereference && S_ISLNK(stat_buf.st_mode))) {
             // Format print with size
             folder_size += size;
 
@@ -126,6 +126,7 @@ int main(int argc, char* argv[], char* envp[]) {
                 // Parent
                 if (pid > 0) {
                     int child_size;
+                    
 
                     if(close(fd[WRITE]) == -1){
                         exit(1);
@@ -144,6 +145,8 @@ int main(int argc, char* argv[], char* envp[]) {
 
                     //if (!c->separate_dirs ) //-S
                       //  folder_size += child_size;
+                      
+                      
                 
                 }
 
@@ -172,11 +175,11 @@ int main(int argc, char* argv[], char* envp[]) {
                     char *argv_[50];
                     create_child_command(c, name, argv_);
 
-                    char log_line[512];
-                    args_to_string(argv_, log_line);
+                    //char log_line[512];
+                    //args_to_string(argv_, log_line);
                     //new_log(CREATE, log_fd, NULL, log_line);
         
-                    if (execv("simpledu", argv_) == -1)
+                    if (execv(argv[0], argv_) == -1)
                         perror("Error in exec\n");
                 }
 
@@ -198,19 +201,26 @@ int main(int argc, char* argv[], char* envp[]) {
         numChildren--;
     }
 
+    int cSize = 0;
+    while(!queue_is_empty(qfds))
+    {
+        read(queue_pop(qfds), &cSize, sizeof(int));
+        
+        if (!c->separate_dirs ) //-S
+            folder_size += cSize;
+    }
     
+    int auxF = folder_size;
     if (!c->bytes)
-        folder_size = (folder_size + c->size - 1) / c->size;
+        auxF = (folder_size + c->size - 1) / c->size;
 
-    sprintf(size_currentDir, "%-7u %s\n", folder_size, c->path);
+    sprintf(size_currentDir, "%-7u %s\n", auxF, c->path);
 
-    write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
+    if(c->max_depth > 0)
+        write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
     
 
-    
-    char tmp[27];
-    sprintf(tmp, "%d", getpid());
-    //write(999, &folder_size, sizeof(int));
+    write(999, &folder_size, sizeof(int));
 
 
     closedir(dirp); 
