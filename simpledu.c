@@ -42,8 +42,6 @@ int main(int argc, char* argv[], char* envp[]) {
     //Group ID
     idgroup = getpgid(getpid());
 
-    new_log(EXIT, NULL, 0);
-
     // Open directory
     DIR *dirp;
 
@@ -205,8 +203,8 @@ int main(int argc, char* argv[], char* envp[]) {
     close(fd[READ]);
     close(fd[WRITE]);
 
-    //new_log(EXIT, 0, NULL, NULL, original);
-
+    new_log(EXIT, NULL, 0);
+    
     if (original)
         exit(0);
 
