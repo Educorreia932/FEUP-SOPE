@@ -1,16 +1,8 @@
 #include "log.h"
 
-log_info *log_info_constructor() {
+static char filename[50];
 
-    log_info* l = (log_info*) malloc(sizeof(log_info));
-    
-    l->num = 0;
-    int pid_dest = 0;
-
-    return l;
-}
-
-void get_log_filename(char* evnp[], char *filename){
+void create_log(char* evnp[]){
 
     char *log_file = getenv(LOG_ENVP);
 
@@ -24,6 +16,15 @@ void get_log_filename(char* evnp[], char *filename){
     
     strcpy(filename, log_file);
     
+    int log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC , 0644);
+
+    if (log_fd == -1) {
+        perror(filename);
+        exit(1);
+    }
+    close(log_fd);
+
+    get_instance();
 }
 
 double get_instance(){
@@ -57,25 +58,19 @@ double get_instance(){
     return elapsed;
 }
 
-void new_log( action act, int fd, log_info *l, char *str, bool original){
+void new_log( action act, char *str, int num){
+    
     int log_fd;
 
-    if (original){
-        log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND , 0644);
-        get_instance();
-    }
-    else {
-        log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND, 0644);
-    }
+    log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    
     if (log_fd == -1) {
-    perror(DEFAULT_LOG_FILENAME);
-    exit(1);
+        perror(filename);
+        exit(1);
     }
 
     char buff[MAX_BUFF_SIZE];
 
-    //end = time(NULL);
-    //printf("aqui\n");
     int pid = getpid();
     double instance = get_instance();
 
@@ -88,19 +83,19 @@ void new_log( action act, int fd, log_info *l, char *str, bool original){
             sprintf(buff, "%f - %u - CREATE - %s\n", instance, pid, str);
             break;
         case EXIT:
-            sprintf(buff, "%f - %u - EXIT - %d\n", instance, pid, 0);
+            sprintf(buff, "%f - %u - EXIT - %d\n", instance, pid, num);
             break;
         case RECV_SIGNAL:
             sprintf(buff, "%f - %d - RECV_SIGNAL - %s\n", instance,pid, str);
             break;
         case SEND_SIGNAL:
-            sprintf(buff, "%f - %d - SEND_SIGNAL - %s %d\n", instance, pid, str, l->pid_dest);
+            sprintf(buff, "%f - %d - SEND_SIGNAL - %s %d\n", instance, pid, str, num);
             break;
         case RECV_PIPE:
-            sprintf(buff, "%f - %d - RECV_PIPE - %d\n", instance, pid, l->num);
+            sprintf(buff, "%f - %d - RECV_PIPE - %d\n", instance, pid, num);
             break;
         case SEND_PIPE:
-            sprintf(buff, "%f - %d - SEND_PIPE - %d\n", instance, pid, l->num);
+            sprintf(buff, "%f - %d - SEND_PIPE - %d\n", instance, pid, num);
             break;
 
     }
@@ -110,5 +105,7 @@ void new_log( action act, int fd, log_info *l, char *str, bool original){
         perror("write error");
         exit(1);
     }
+
+    close(log_fd);
 
 }

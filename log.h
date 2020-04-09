@@ -17,16 +17,7 @@
 typedef enum {CREATE, EXIT, RECV_SIGNAL, SEND_SIGNAL, RECV_PIPE, SEND_PIPE, ENTRY} action;
 
 
-typedef struct {
-
-    int pid_dest;
-    int num; //for exit and signals
-
-} log_info;
-
-log_info *log_info_constructor();
-
-void get_log_filename(char *envp[], char *filename);
-void new_log( action act, int fd, log_info *info, char *str, bool original);
+void create_log(char *envp[]);
+void new_log( action act, char *str, int num);
 void begin_time();
 double get_instance();
