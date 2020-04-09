@@ -1,22 +1,22 @@
 #include "log.h"
 
+#define FILE_PERMISSION 0644
+
 static char filename[50];
 
 void create_log(char* evnp[]){
-
     char *log_file = getenv(LOG_ENVP);
 
     if (log_file == NULL) {
-
-        if(setenv(LOG_ENVP, DEFAULT_LOG_FILENAME, 0)){
+        if(setenv(LOG_ENVP, DEFAULT_LOG_FILENAME, 0))
             exit(1);
-        }
+
         log_file = DEFAULT_LOG_FILENAME;
     }
     
     strcpy(filename, log_file);
     
-    int log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC , 0644);
+    int log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC , FILE_PERMISSION);
 
     if (log_fd == -1) {
         perror(filename);
@@ -28,20 +28,22 @@ void create_log(char* evnp[]){
 }
 
 double get_instance(){
-    
     struct timeval begin, end;
     double start, final, elapsed;  
 
     char aux[50];
-    if (getenv(TIME_ENV) != NULL){ //env has been set
+    
+    //Env has been set
+    if (getenv(TIME_ENV) != NULL){ 
         //char *ptr;
         sprintf(aux, "%s", getenv(TIME_ENV));
 
         start = strtol(aux, NULL, 10);
 
     }
-    else { //original process (needs to set envp)
-        
+
+    // Original process (needs to set envp)
+    else { 
         char t[50];
         gettimeofday(&begin, NULL);
         start = (begin.tv_sec * 1000000u + begin.tv_usec) / 1.e6;
@@ -50,7 +52,6 @@ double get_instance(){
         if (setenv(TIME_ENV, t, 0) == -1){
             exit(1);
         }
-
     }
 
     gettimeofday(&end, NULL);
@@ -63,7 +64,7 @@ void new_log( action act, char *str, int num){
     
     int log_fd;
 
-    log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND, FILE_PERMISSION);
     
     if (log_fd == -1) {
         perror(filename);
@@ -76,7 +77,6 @@ void new_log( action act, char *str, int num){
     double instance = get_instance();
 
     switch (act){
-
         case ENTRY:
             sprintf(buff, "%f - %d - ENTRY - %s\n", instance, pid, str);
             break;

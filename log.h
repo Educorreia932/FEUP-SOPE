@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 #define LOG_ENVP "LOG_FILENAME"
-#define DEFAULT_LOG_FILENAME "log.txt"
+#define DEFAULT_LOG_FILENAME "../log.txt"
 #define MAX_BUFF_SIZE 512
 
 #define TIME_ENV "envTime"
