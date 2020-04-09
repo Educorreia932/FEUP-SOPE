@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <limits.h>
 
+#include "log.h"
+
 #define DEFAULT_BLOCK_SIZE 1024
 
 

@@ -29,7 +29,7 @@ void create_log(char* evnp[]){
 
 double get_instance(){
     
-   struct timeval begin, end;
+    struct timeval begin, end;
     double start, final, elapsed;  
 
     char aux[50];
@@ -46,6 +46,7 @@ double get_instance(){
         gettimeofday(&begin, NULL);
         start = (begin.tv_sec * 1000000u + begin.tv_usec) / 1.e6;
         sprintf(t,"%f", start);
+
         if (setenv(TIME_ENV, t, 0) == -1){
             exit(1);
         }
