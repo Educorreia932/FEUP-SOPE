@@ -12,10 +12,9 @@
 #define READ 0
 #define WRITE 1
 
-static log_info *l;
-static int log_fd;
 
 int main(int argc, char* argv[], char* envp[]) {
+
     char name[300]; 
     int folder_size = 0;
     int fd[2];
@@ -26,8 +25,12 @@ int main(int argc, char* argv[], char* envp[]) {
     bool original = isOriginal(envp);
 
     //Signal Handler
-    if(original)
+    if(original){
         signal(SIGINT, handle_sigint); 
+        create_log(envp);
+    }
+
+    new_log(EXIT, NULL, 0);   
 
     //Check Flags
     flags* c = flags_constructor();
@@ -41,11 +44,6 @@ int main(int argc, char* argv[], char* envp[]) {
 
     //Group ID
     idgroup = getpgid(getpid());
-
-    //Log file
-    l = log_info_constructor();
-    char log_file[50];
-    get_log_filename(envp, log_file);
 
     // Open directory
     DIR *dirp;
