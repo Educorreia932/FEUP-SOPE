@@ -137,6 +137,7 @@ int main(int argc, char* argv[], char* envp[]) {
                     if(original && (numChildren == 1)) {
                         char ready;
                         while(read(fd[READ], &ready, sizeof(char)) == 0);
+                        new_log(RECV_PIPE, NULL, ready);
                         idgroup = pid;
                     }
                 }
@@ -159,6 +160,7 @@ int main(int argc, char* argv[], char* envp[]) {
                         char ready = 'y';
                         setpgid(0, getpid());
                         write(999, &ready, sizeof(char)); //Tells father group is set
+                        new_log(SEND_PIPE, NULL, ready);
                     }
 
                     else
@@ -192,6 +194,7 @@ int main(int argc, char* argv[], char* envp[]) {
         wait(NULL);
 
         read(queue_pop(qfds), &cSize, sizeof(int));
+        new_log(RECV_PIPE, NULL, cSize);
         
         if (!c->separate_dirs ) //-S
             folder_size += cSize;
@@ -212,6 +215,7 @@ int main(int argc, char* argv[], char* envp[]) {
         write(STDOUT_FILENO, size_currentDir, strlen(size_currentDir));
 
     write(999, &folder_size, sizeof(int));
+    new_log(SEND_PIPE, NULL, folder_size);
 
     if(closedir(dirp) == -1){
         new_log(EXIT, NULL, 1);
