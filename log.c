@@ -15,15 +15,21 @@ void create_log(char* evnp[]){
     }
     
     strcpy(filename, log_file);
-
-    //creating empty file
+    
     int log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC , 0644);
+
+    if (log_fd == -1) {
+        perror(filename);
+        exit(1);
+    }
     close(log_fd);
+
+    get_instance();
 }
 
 double get_instance(){
     
-   struct timeval begin, end;
+    struct timeval begin, end;
     double start, final, elapsed;  
 
     char aux[50];
@@ -40,6 +46,7 @@ double get_instance(){
         gettimeofday(&begin, NULL);
         start = (begin.tv_sec * 1000000u + begin.tv_usec) / 1.e6;
         sprintf(t,"%f", start);
+
         if (setenv(TIME_ENV, t, 0) == -1){
             exit(1);
         }
@@ -53,7 +60,7 @@ double get_instance(){
 }
 
 void new_log( action act, char *str, int num){
-
+    
     int log_fd;
 
     log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -64,7 +71,6 @@ void new_log( action act, char *str, int num){
     }
 
     char buff[MAX_BUFF_SIZE];
-
 
     int pid = getpid();
     double instance = get_instance();

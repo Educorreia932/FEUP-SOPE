@@ -16,6 +16,7 @@
 
 typedef enum {CREATE, EXIT, RECV_SIGNAL, SEND_SIGNAL, RECV_PIPE, SEND_PIPE, ENTRY} action;
 
+
 void create_log(char *envp[]);
 void new_log( action act, char *str, int num);
 void begin_time();

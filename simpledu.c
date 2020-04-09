@@ -12,7 +12,6 @@
 #define READ 0
 #define WRITE 1
 
-
 int main(int argc, char* argv[], char* envp[]) {
 
     char name[300]; 
@@ -158,10 +157,6 @@ int main(int argc, char* argv[], char* envp[]) {
 
                     char *argv_[50];
                     create_child_command(c, name, argv_);
-
-                    //char log_line[512];
-                    //args_to_string(argv_, log_line);
-                    //new_log(CREATE, log_fd, NULL, log_line);
         
                     if (execv(argv[0], argv_) == -1)
                         perror("Error in exec\n");
@@ -205,8 +200,8 @@ int main(int argc, char* argv[], char* envp[]) {
     close(fd[READ]);
     close(fd[WRITE]);
 
-    //new_log(EXIT, 0, NULL, NULL, original);
-
+    new_log(EXIT, NULL, 0);
+    
     if (original)
         exit(0);
 

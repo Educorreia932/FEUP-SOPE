@@ -81,12 +81,16 @@ void parse_flags(int argc, char* argv[], flags* c) {
 }
 
 void create_child_command(flags *c, char *name, char **dest){
+
+    char log_line[512] = "";
+
     char max_depth[50];
     sprintf(max_depth, "--max-depth=%d", c->max_depth - 1);
 
     dest[0] = "simpledu";
     dest[1] = name;
     dest[2] = max_depth;
+
 
     int cnt = 2;
     if (c->all) { dest[++cnt] = "-a"; }
@@ -108,6 +112,14 @@ void create_child_command(flags *c, char *name, char **dest){
         dest[++cnt] = "-L";
     
     dest[++cnt] = NULL;
+
+    //converting args to string
+    for ( int i = 0; dest[i] != NULL; i++) {
+        strncat(log_line, dest[i],512);
+        strncat(log_line, " ",2);
+    } 
+
+    new_log(CREATE, log_line, 0);
 }
 
 void print_flags(flags* c) {
