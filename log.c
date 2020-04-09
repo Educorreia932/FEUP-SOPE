@@ -114,5 +114,4 @@ void new_log( action act, char *str, int num){
     }
 
     close(log_fd);
-
 }

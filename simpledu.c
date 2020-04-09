@@ -207,14 +207,7 @@ int main(int argc, char* argv[], char* envp[]) {
             folder_size += cSize;
     }
     
-    int auxF = folder_size;
-
-    if (!c->bytes)
-        auxF = (folder_size + c->size - 1) / c->size;
-    else
-        auxF /= c->size;
-    
-    
+    int auxF = (folder_size + c->size - 1) / c->size;
 
     sprintf(size_currentDir, "%-7u %s\n", auxF, c->path);
 

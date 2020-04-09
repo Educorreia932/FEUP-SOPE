@@ -28,8 +28,10 @@ void parse_flags(int argc, char* argv[], flags* c) {
             c->all = true;
 
         // Real number of bytes
-        else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--bytes")) 
+        else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--bytes")) {
             c->bytes = true;
+            c->size = 1;
+        }
 
         // Block size (bytes)
         else if (!strcmp(argv[i], "-B") && (i + 1 < argc)) { 
@@ -58,7 +60,8 @@ void parse_flags(int argc, char* argv[], flags* c) {
         else if (!strcmp(argv[i], "-S") || !strcmp(argv[i], "--separate-dirs")) 
             c->separate_dirs = true;
 
-        else if (strstr(argv[i], "--max-depth=") != NULL) { // Directory max depth
+        // Directory max depth
+        else if (strstr(argv[i], "--max-depth=") != NULL) { 
             char* max_depth;
             char* token = strtok(argv[i], "=");
             token = strtok(NULL, "=");
@@ -75,7 +78,8 @@ void parse_flags(int argc, char* argv[], flags* c) {
                 c->max_depth = atoi(token);
         }
 
-        else if (strcmp(argv[i], "-l")){ // Checking for invalid arguments
+        // Checking for invalid arguments
+        else if (strcmp(argv[i], "-l")){ 
             printf("simpledu: invalid option %s\n", argv[i]);
             new_log(EXIT, NULL, 1);
             exit(1);
@@ -92,7 +96,6 @@ void create_child_command(flags *c, char *name, char **dest){
     dest[0] = "simpledu";
     dest[1] = name;
     dest[2] = max_depth;
-
 
     int cnt = 2;
     if (c->all) { dest[++cnt] = "-a"; }
