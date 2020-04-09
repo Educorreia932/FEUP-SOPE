@@ -188,6 +188,10 @@ int main(int argc, char* argv[], char* envp[]) {
 
     if (!c->bytes)
         auxF = (folder_size + c->size - 1) / c->size;
+    else
+        auxF /= c->size;
+    
+    
 
     sprintf(size_currentDir, "%-7u %s\n", auxF, c->path);
 
