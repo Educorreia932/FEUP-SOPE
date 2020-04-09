@@ -8,8 +8,10 @@ void create_log(char* evnp[]){
     char *log_file = getenv(LOG_ENVP);
 
     if (log_file == NULL) {
-        if(setenv(LOG_ENVP, DEFAULT_LOG_FILENAME, 0))
+        if(setenv(LOG_ENVP, DEFAULT_LOG_FILENAME, 0)){
+            new_log(EXIT, NULL, 1);
             exit(1);
+        }
 
         log_file = DEFAULT_LOG_FILENAME;
     }
@@ -20,6 +22,7 @@ void create_log(char* evnp[]){
 
     if (log_fd == -1) {
         perror(filename);
+        new_log(EXIT, NULL, 1);
         exit(1);
     }
     close(log_fd);
@@ -50,6 +53,7 @@ double get_instance(){
         sprintf(t,"%f", start);
 
         if (setenv(TIME_ENV, t, 0) == -1){
+            new_log(EXIT, NULL, 1);
             exit(1);
         }
     }
@@ -68,6 +72,7 @@ void new_log( action act, char *str, int num){
     
     if (log_fd == -1) {
         perror(filename);
+        new_log(EXIT, NULL, 1);
         exit(1);
     }
 
@@ -104,6 +109,7 @@ void new_log( action act, char *str, int num){
     int w = 0;
     if ((w = write(log_fd, buff, strlen(buff))) < 0){
         perror("write error");
+        new_log(EXIT, NULL, 1);
         exit(1);
     }
 

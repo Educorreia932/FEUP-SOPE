@@ -40,6 +40,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
 
             if ((size == argument) || (*size != '\0')) {
                 perror("Size must be an integer\n");
+                new_log(EXIT, NULL, 1);
                 exit(1);
             }
 
@@ -66,6 +67,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
 
             if ((max_depth == token) || (*max_depth != '\0')) {
                 perror("Max depth must be an integer\n");
+                new_log(EXIT, NULL, 1);
                 exit(1);
             }
 
@@ -75,6 +77,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
 
         else if (strcmp(argv[i], "-l")){ // Checking for invalid arguments
             printf("simpledu: invalid option %s\n", argv[i]);
+            new_log(EXIT, NULL, 1);
             exit(1);
         }
     }

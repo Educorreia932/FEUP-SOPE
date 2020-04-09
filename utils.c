@@ -2,8 +2,10 @@
 
 // Handler for SIGINT, caused by 
 // Ctrl-C at keyboard 
-void handle_sigint(int sig) { 
-   kill(-idgroup, SIGSTOP);
+void handle_sigint(int sig) {
+    kill(-idgroup, SIGSTOP);
+    new_log(RECV_SIGNAL, "SIGINT", 0);
+    new_log(SEND_SIGNAL, "SIGSTOP", idgroup);
 
     bool valid_answer = false;
 
@@ -16,6 +18,8 @@ void handle_sigint(int sig) {
         if(answer == 'y') {
             valid_answer = true;
             kill(-idgroup, SIGTERM);
+            new_log(SEND_SIGNAL, "SIGTERM", idgroup);
+            new_log(EXIT, NULL, 1);
             exit(1);
         }
 
@@ -23,7 +27,7 @@ void handle_sigint(int sig) {
             valid_answer = true;
             printf("\n");
             kill(-idgroup, SIGCONT);
-
+            new_log(SEND_SIGNAL, "SIGCONT", idgroup);
         }
     }
 } 
@@ -33,12 +37,12 @@ bool isOriginal(char* envp[]) {
         char env[50];
         sprintf(env, "%d", getpid());
 
-        if (setenv("envPid", env, 0) == -1)
+        if (setenv("envPid", env, 0) == -1){
+            new_log(EXIT, NULL, 1);
             exit(1);
-        
+        }
         return true;
     }
-
     return false; 
 } 
 

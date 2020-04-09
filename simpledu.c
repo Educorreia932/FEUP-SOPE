@@ -20,6 +20,9 @@ int main(int argc, char* argv[], char* envp[]) {
     char size_currentDir[50];
     int numChildren = 0;
 
+    //Group ID
+    idgroup = getpgid(getpid());
+
     // Checks if this one is the original process
     bool original = isOriginal(envp);
 
@@ -29,25 +32,22 @@ int main(int argc, char* argv[], char* envp[]) {
         create_log(envp);
     }
 
-    new_log(EXIT, NULL, 0);   
-
     //Check Flags
     flags* c = flags_constructor();
 
     if (argc > 9) {
         perror("Usage: simpledu -l [path] [-a] [-b] [-B size] [-L] [-S] [--max-depth=N]");
+        new_log(EXIT, NULL, 1);
         exit(1);
     }
 
     parse_flags(argc, argv, c);
 
-    //Group ID
-    idgroup = getpgid(getpid());
-
     // Open directory
     DIR *dirp;
 
     if ((dirp = opendir(c->path)) == NULL) {
+        new_log(EXIT, NULL, 1);
         perror(c->path);
         exit(1);
     } 
@@ -70,7 +70,8 @@ int main(int argc, char* argv[], char* envp[]) {
 
         // Stat if -L active
         if (c->dereference) {
-            if (stat(name, &stat_buf) == -1){ 
+            if (stat(name, &stat_buf) == -1){
+                new_log(EXIT, NULL, 1); 
                 perror("stat ERROR");
                 exit(1);
             }
@@ -79,6 +80,7 @@ int main(int argc, char* argv[], char* envp[]) {
         // Lstat if -L not active
         else {
             if (lstat(name, &stat_buf) == -1) {
+            new_log(EXIT, NULL, 1);
             perror("lstat ERROR");
             exit(1);}
         }
@@ -101,15 +103,17 @@ int main(int argc, char* argv[], char* envp[]) {
                     size /= c->size;
 
                 sprintf(str, "%-7u %s\n", size, name);
-                //new_log(ENTRY, log_fd, NULL, str);
                 write(STDOUT_FILENO, str, strlen(str));
             }
         }
         
         // Directory
         else if (S_ISDIR(stat_buf.st_mode) ) {
-            if (pipe(fd) < 0) 
-                perror("Pipe error %s\n");  
+            if (pipe(fd) < 0){
+                perror("Pipe error %s\n"); 
+                new_log(EXIT, NULL, 1);
+                exit(1);
+            }  
 
             if (!strcmp(direntp->d_name, "."))
                 folder_size += size;
@@ -124,6 +128,7 @@ int main(int argc, char* argv[], char* envp[]) {
                     int child_size;
 
                     if (close(fd[WRITE]) == -1){
+                        new_log(EXIT, NULL, 1);
                         exit(1);
                     }    
 
@@ -138,13 +143,17 @@ int main(int argc, char* argv[], char* envp[]) {
 
                 // Child
                 else if (pid == 0) {                    
-                    if(close(fd[READ]) == -1)
+                    if(close(fd[READ]) == -1){
+                        new_log(EXIT, NULL, 1);
                         exit(1);
+                    }
 
                     dup2(fd[WRITE], 999);
 
-                    if (close(fd[WRITE]) == -1)
+                    if (close(fd[WRITE]) == -1){
+                        new_log(EXIT, NULL, 1);
                         exit(1);
+                    }
 
                     if (original && numChildren == 1) {
                         char ready = 'y';
@@ -158,13 +167,17 @@ int main(int argc, char* argv[], char* envp[]) {
                     char *argv_[50];
                     create_child_command(c, name, argv_);
         
-                    if (execv(argv[0], argv_) == -1)
+                    if (execv(argv[0], argv_) == -1){
                         perror("Error in exec\n");
+                        new_log(EXIT, NULL, 1);
+                        exit(1);
+                    }
                 }
 
                 // Error
                 else {
                     perror("Error in fork\n");
+                    new_log(EXIT, NULL, 1);
                     exit(1);
                 }
             }
@@ -200,9 +213,15 @@ int main(int argc, char* argv[], char* envp[]) {
 
     write(999, &folder_size, sizeof(int));
 
-    closedir(dirp); 
-    close(fd[READ]);
-    close(fd[WRITE]);
+    if(closedir(dirp) == -1){
+        new_log(EXIT, NULL, 1);
+        exit(1);
+    } 
+    
+    if(close(fd[READ]) == -1){
+        new_log(EXIT, NULL, 1);
+        exit(1);
+    }
 
     new_log(EXIT, NULL, 0);
     
