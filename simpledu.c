@@ -44,10 +44,11 @@ int main(int argc, char* argv[], char* envp[]) {
     parse_flags(argc, argv, c);
     
     //LOG Create original
-    char args[512];
-    args_to_string(argv, args);
-    if(original)
+    if(original){
+        char args[512];
+        args_to_string(argv, args);
         new_log(CREATE, args, 0);
+    }
 
     // Open directory
     DIR *dirp;
