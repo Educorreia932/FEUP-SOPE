@@ -57,7 +57,7 @@ double get_instance(){
     gettimeofday(&end, NULL);
     final = (end.tv_sec * 1000000u + end.tv_usec) / 1.e6;
     elapsed = final - start;
-    return elapsed;
+    return elapsed*1000;
 }
 
 void new_log( action act, char *str, int num){
@@ -78,25 +78,25 @@ void new_log( action act, char *str, int num){
 
     switch (act){
         case ENTRY:
-            sprintf(buff, "%f - %d - ENTRY - %s\n", instance, pid, str);
+            sprintf(buff, "%0.2f - %d - ENTRY - %s\n", instance, pid, str);
             break;
         case CREATE:
-            sprintf(buff, "%f - %u - CREATE - %s\n", instance, pid, str);
+            sprintf(buff, "%0.2f - %u - CREATE - %s\n", instance, pid, str);
             break;
         case EXIT:
-            sprintf(buff, "%f - %u - EXIT - %d\n", instance, pid, num);
+            sprintf(buff, "%0.2f - %u - EXIT - %d\n", instance, pid, num);
             break;
         case RECV_SIGNAL:
-            sprintf(buff, "%f - %d - RECV_SIGNAL - %s\n", instance,pid, str);
+            sprintf(buff, "%0.2f - %d - RECV_SIGNAL - %s\n", instance,pid, str);
             break;
         case SEND_SIGNAL:
-            sprintf(buff, "%f - %d - SEND_SIGNAL - %s %d\n", instance, pid, str, num);
+            sprintf(buff, "%0.2f - %d - SEND_SIGNAL - %s %d\n", instance, pid, str, num);
             break;
         case RECV_PIPE:
-            sprintf(buff, "%f - %d - RECV_PIPE - %d\n", instance, pid, num);
+            sprintf(buff, "%0.2f - %d - RECV_PIPE - %d\n", instance, pid, num);
             break;
         case SEND_PIPE:
-            sprintf(buff, "%f - %d - SEND_PIPE - %d\n", instance, pid, num);
+            sprintf(buff, "%0.2f - %d - SEND_PIPE - %d\n", instance, pid, num);
             break;
 
     }
