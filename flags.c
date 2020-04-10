@@ -90,24 +90,23 @@ void parse_flags(int argc, char* argv[], flags* c) {
 void create_child_command(flags *c, char *name, char **dest){
     char log_line[512] = "";
 
-    char max_depth[50];
-    sprintf(max_depth, "--max-depth=%d", c->max_depth - 1);
-
     dest[0] = "simpledu";
     dest[1] = name;
-    dest[2] = max_depth;
 
-    int cnt = 2;
+    int cnt = 1;
     if (c->all) { dest[++cnt] = "-a"; }
     if (c->bytes) { dest[++cnt] = "-b"; }
     if (c->separate_dirs) { dest[++cnt] = "-S"; }
 
-    if (c->size != DEFAULT_BLOCK_SIZE) {
-        char B[25];
-        sprintf(B, "%u", c->size);
+    if (c->max_depth != INT_MAX) {
+        dest[++cnt] = calloc(50, sizeof(char));
+        sprintf(dest[cnt], "--max-depth=%d", c->max_depth - 1);
+    }
 
+    if (c->size != DEFAULT_BLOCK_SIZE) {
         dest[++cnt] = "-B";
-        dest[++cnt] = B;
+        dest[++cnt] = calloc(25, sizeof(char));
+        sprintf(dest[cnt], "%u", c->size);
     }
 
     if (c->separate_dirs) 
