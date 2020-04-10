@@ -18,7 +18,7 @@ void create_log(char* evnp[]){
     
     strcpy(filename, log_file);
     
-    int log_fd = open(DEFAULT_LOG_FILENAME, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC , FILE_PERMISSION);
+    int log_fd = open(filename, O_WRONLY | O_CREAT | O_APPEND | O_TRUNC , FILE_PERMISSION);
 
     if (log_fd == -1) {
         perror(filename);
