@@ -34,7 +34,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
         }
 
         // Block size (bytes)
-        else if (!strcmp(argv[i], "-B") && (i + 1 < argc)) { 
+        else if ((!strcmp(argv[i], "-B")) && (i + 1 < argc)) { 
             char* argument = argv[i + 1];
             char* size;
 
@@ -50,6 +50,23 @@ void parse_flags(int argc, char* argv[], flags* c) {
                 c->size = val;
 
             i++;
+        }
+
+        else if (strstr(argv[i], "--block-size=") != NULL) { 
+            char* block_size;
+            char* token = strtok(argv[i], "=");
+            token = strtok(NULL, "=");
+
+            unsigned int val = strtol(token, &block_size, 10);
+
+            if ((block_size == token) || (*block_size != '\0')) {
+                perror("Block size must be an integer\n");
+                new_log(EXIT, NULL, 1);
+                exit(1);
+            }
+
+            else
+                c->size = atoi(token);
         }
 
         // Symbolic links
@@ -79,7 +96,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
         }
 
         // Checking for invalid arguments
-        else if (strcmp(argv[i], "-l")){ 
+        else if (strcmp(argv[i], "-l") || strcmp(argv[i], "--count-links")){ 
             printf("simpledu: invalid option %s\n", argv[i]);
             new_log(EXIT, NULL, 1);
             exit(1);
