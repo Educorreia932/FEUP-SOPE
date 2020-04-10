@@ -107,7 +107,6 @@ void parse_flags(int argc, char* argv[], flags* c) {
 void create_child_command(flags *c, char *name, char **dest){
     char log_line[512] = "";
 
-    dest[0] = "simpledu";
     dest[1] = name;
 
     int cnt = 1;

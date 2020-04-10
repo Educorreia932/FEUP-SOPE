@@ -174,6 +174,7 @@ int main(int argc, char* argv[], char* envp[]) {
                         setpgid(pid, idgroup);
 
                     char *argv_[50];
+                    argv_[0] = argv[0];
                     create_child_command(c, name, argv_);
         
                     if (execv(argv[0], argv_) == -1){
