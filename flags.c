@@ -96,7 +96,7 @@ void parse_flags(int argc, char* argv[], flags* c) {
         }
 
         // Checking for invalid arguments
-        else if (strcmp(argv[i], "-l") || strcmp(argv[i], "--count-links")){ 
+        else if (strcmp(argv[i], "-l") && strcmp(argv[i], "--count-links")){ 
             printf("simpledu: invalid option %s\n", argv[i]);
             new_log(EXIT, NULL, 1);
             exit(1);
