@@ -1,4 +1,4 @@
-#include <flagsU.h>
+#include "flagsU.h"
 
 flagsU* flagsU_constructor() {
     flagsU* c = (flagsU*) malloc(sizeof(flagsU));

@@ -1,5 +1,11 @@
 #include "flagsU.h"
 
+void * thr_func(void * arg) {
+    sleep(3);
+    printf("Thread is working yey!\n");
+    return NULL;
+}
+
 int main(int argc, char * argv[]){
     // Check Flags
     flagsU* c = flagsU_constructor(); 
@@ -29,7 +35,16 @@ int main(int argc, char * argv[]){
         exit(1);
     } 
 
+    //Thread creating
+    pthread_t tid;
+    
+    if (pthread_create(&tid, NULL, thr_func, NULL)){
+        perror("Failed to create thread");
+        exit(1);
+    }
+
     close(fd);
 
-    return 0;
+    pthread_exit(NULL); //Thread continues running after the main thread ends
+
 }
