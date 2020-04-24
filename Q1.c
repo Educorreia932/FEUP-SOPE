@@ -22,8 +22,8 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
+    //Create and open public FIFO
     int fd;
-    char str[100]; 
 
     mkfifo(c->fifoname, 0660);
 
@@ -32,11 +32,13 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
-    putchar('\n');
-    while(readline(fd, str)) printf("%s",str);
-    close(fd); 
-
+    //Close and Delete FIFO
     close(fd);
+
+    if(unlink(c->fifoname) == -1){
+        perror("Failed to delete FIFO");
+        exit(1);
+    }
 
     return 0;
 }

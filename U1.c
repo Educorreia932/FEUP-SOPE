@@ -11,21 +11,22 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
-    int fd, messagelen;
-    char message[100];     
+    //Open public FIFO
+    int fd, timeout = 0;     
 
     do {
         fd = open(c->fifoname, O_WRONLY);
 
-        if (fd == -1) 
+        if (fd == -1){
+            timeout++;
             sleep(1);
-    } while (fd ==- 1); 
+        } 
+            
+    } while (fd == -1 && timeout < 3);
 
-    for (int i=1; i<=3; i++) {
-        sprintf(message,"Hello no. %d from process no. %d\n", i, getpid());
-        messagelen=strlen(message)+1;
-        write(fd,message,messagelen);
-        sleep(1);
+    if(timeout == 3){ //Took too long to open 
+        perror("Failed to open FIFO");
+        exit(1);
     } 
 
     close(fd);
