@@ -1,12 +1,21 @@
+#include <time.h>
+#include <sys/types.h>
+
 #include "flagsU.h"
 
-#include <time.h>
-
-#define MAX_THREADS 40
-#define MAX_STR 50
+#define MAX_THREADS 3
+#define MAX_STR 100
 
 void * thr_func(void * arg) {
-    printf("%s\n", (char *) arg);
+    char privateFIFO[MAX_STR], *tid;
+
+    //Name of privateFIFO
+    sprintf(privateFIFO, "/tmp/%d.", getpid());
+    tid = (char *) malloc(sizeof(long unsigned int));
+    sprintf(tid, "%lu", pthread_self());
+    strcat(privateFIFO, tid);
+
+    printf("%s\n", privateFIFO);
     return NULL;
 }
 
