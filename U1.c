@@ -3,19 +3,21 @@
 
 #include "flagsU.h"
 
-#define MAX_THREADS 3
+#define MAX_THREADS 10
 #define MAX_STR 100
 
-void * thr_func(void * arg) {
-    char privateFIFO[MAX_STR], *tid;
+flagsU* flags;
+
+void * thr_func(void * arg) { 
+    
+    char msg[MAX_STR];
+    //[ i, pid, tid, dur, pl] 
+    sprintf(msg, "%d, %d, %lu, %d", * (int *)arg, getpid(), pthread_self(), rand() % 200 + 50);
 
     //Name of privateFIFO
-    sprintf(privateFIFO, "/tmp/%d.", getpid());
-    tid = (char *) malloc(sizeof(long unsigned int));
-    sprintf(tid, "%lu", pthread_self());
-    strcat(privateFIFO, tid);
-
-    printf("%s\n", privateFIFO);
+    char privateFIFO[MAX_STR];
+    sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
+    
     return NULL;
 }
 
@@ -25,11 +27,11 @@ int main(int argc, char * argv[]){
     time_t begin = time(NULL);
 
     // Check Flags
-    flagsU* c = flagsU_constructor(); 
+    flags = flagsU_constructor(); 
     
-    parse_flagsU(argc, argv, c);
+    parse_flagsU(argc, argv, flags);
 
-    if (argc != 4 || c->fifoname == NULL || c->nsecs == 0) {
+    if (argc != 4 || flags->fifoname == NULL || flags->nsecs == 0) {
         perror("Usage: U1 <-t nsecs> fifoname");
         exit(1);
     }
@@ -38,7 +40,7 @@ int main(int argc, char * argv[]){
     int fd, timeout = 0;     
 
     do {
-        fd = open(c->fifoname, O_WRONLY);
+        fd = open(flags->fifoname, O_WRONLY);
 
         if (fd == -1){
             timeout++;
@@ -54,13 +56,16 @@ int main(int argc, char * argv[]){
 
     //Thread creating
     pthread_t tid[MAX_THREADS];
+    int *thrArg, t = 0;
     
-    char thrArg[MAX_STR];
-    strcpy(thrArg, c->fifoname);
+    srand(time(NULL));
 
-    int t = 0;
-    while( (time(NULL)-begin) < c->nsecs && t < MAX_THREADS){
-        if (pthread_create(&tid[t], NULL, thr_func, c->fifoname)){
+    while( (time(NULL) - begin) < flags->nsecs && t < MAX_THREADS){
+        
+        thrArg = (int *) malloc(sizeof(t));
+        *thrArg = t + 1; //Number of request
+
+        if (pthread_create(&tid[t], NULL, thr_func, thrArg)){
             perror("Failed to create thread");
             exit(1);
         }
