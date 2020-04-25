@@ -1,8 +1,11 @@
 #include "flagsU.h"
 
+#define MAX_THREADS 3
+#define MAX_STR 50
+
 void * thr_func(void * arg) {
     sleep(3);
-    printf("Thread is working yey!\n");
+    printf("%s\n", (char *) arg);
     return NULL;
 }
 
@@ -37,8 +40,10 @@ int main(int argc, char * argv[]){
 
     //Thread creating
     pthread_t tid;
-    
-    if (pthread_create(&tid, NULL, thr_func, NULL)){
+    char thrArg[MAX_STR];
+    strcpy(thrArg, c->fifoname);
+
+    if (pthread_create(&tid, NULL, thr_func, c->fifoname)){
         perror("Failed to create thread");
         exit(1);
     }

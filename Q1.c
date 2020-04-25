@@ -25,7 +25,10 @@ int main(int argc, char * argv[]){
     //Create and open public FIFO
     int fd;
 
-    mkfifo(c->fifoname, 0660);
+    if(mkfifo(c->fifoname, 0660) == -1){
+        perror("Failed to create fifo");
+        exit(1);
+    }
 
     if ((fd = open(c->fifoname,O_RDONLY)) == -1) {
         perror("Couldn't open FIFO.\n");
