@@ -1,15 +1,20 @@
 #include "flagsU.h"
 
-#define MAX_THREADS 3
+#include <time.h>
+
+#define MAX_THREADS 40
 #define MAX_STR 50
 
 void * thr_func(void * arg) {
-    sleep(3);
     printf("%s\n", (char *) arg);
     return NULL;
 }
 
 int main(int argc, char * argv[]){
+    
+    //Begin Time count
+    time_t begin = time(NULL);
+
     // Check Flags
     flagsU* c = flagsU_constructor(); 
     
@@ -39,17 +44,35 @@ int main(int argc, char * argv[]){
     } 
 
     //Thread creating
-    pthread_t tid;
+    pthread_t tid[MAX_THREADS];
+    
     char thrArg[MAX_STR];
     strcpy(thrArg, c->fifoname);
 
-    if (pthread_create(&tid, NULL, thr_func, c->fifoname)){
-        perror("Failed to create thread");
+    int t = 0;
+    while( (time(NULL)-begin) < c->nsecs && t < MAX_THREADS){
+        if (pthread_create(&tid[t], NULL, thr_func, c->fifoname)){
+            perror("Failed to create thread");
+            exit(1);
+        }
+
+        if(usleep(100)){
+            perror("Failed sleeping");
+            exit(1);
+        }
+        
+        t++;
+    }
+    
+    for(int i = 0; i < t; i++){
+        pthread_join(tid[i], NULL);
+    }
+
+    if(close(fd) == -1){
+        perror("Failed closing fifo");
         exit(1);
     }
 
-    close(fd);
-
-    pthread_exit(NULL); //Thread continues running after the main thread ends
+    return 0;
 
 }

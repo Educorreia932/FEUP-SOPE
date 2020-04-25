@@ -36,7 +36,10 @@ int main(int argc, char * argv[]){
     }
 
     //Close and Delete FIFO
-    close(fd);
+    if(close(fd) == -1){
+        perror("Failed closing fifo");
+        exit(1);
+    }
 
     if(unlink(c->fifoname) == -1){
         perror("Failed to delete FIFO");
