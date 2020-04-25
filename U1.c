@@ -2,6 +2,7 @@
 #include <sys/types.h>
 
 #include "flagsU.h"
+#include "log.h"
 
 #define MAX_THREADS 10
 #define MAX_STR 100
@@ -18,6 +19,9 @@ void * thr_func(void * arg) {
     char privateFIFO[MAX_STR];
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
     
+    enum Operation op = IWANT;
+    print_log(msg, op);
+
     return NULL;
 }
 
