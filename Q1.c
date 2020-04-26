@@ -48,7 +48,7 @@ int main(int argc, char * argv[]){
     int *thrArg, t = 0;
     
     srand(time(NULL));
-    while( (time(NULL) - begin) < c->nsecs){
+    while( (time(NULL) - begin) < c->nsecs && t < MAX_THREADS){
         
         thrArg = (int *) malloc(sizeof(t));
         *thrArg = t + 1; //request number
