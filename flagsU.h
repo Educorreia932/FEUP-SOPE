@@ -5,7 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define SEM_NAME "/sem1"
 
 typedef struct {
     unsigned int nsecs;

@@ -5,14 +5,14 @@
 #include "flagsU.h"
 #include "log.h"
 
-#define MAX_THREADS 10
-#define MAX_STR 100
+#include "utils.h"
 
 flagsU* flags;
 
 sem_t mutex;
+static int public_fd;
 
-void * thr_func(void * arg) { 
+void * send_request(void * arg) { 
     
     char msg[MAX_STR];
     //[ i, pid, tid, dur, pl] 
@@ -22,16 +22,31 @@ void * thr_func(void * arg) {
     char privateFIFO[MAX_STR];
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
     
-    int fd = open(privateFIFO, O_RDONLY | O_CREAT);
+    int private_fd = open(privateFIFO, O_RDONLY | O_CREAT);
 
-    if (fd == -1 ) {
+    if (private_fd == -1 ) {
         perror("Couldn't create private FIFO");
         pthread_exit(NULL);
     }
 
-    //WAIT HERE
+    //CLOSE FIFO FOR READING
 
+    //send request
+    write(public_fd, msg, strlen(msg));
+
+    //UNLOCK FIFO FOR READING
+
+    //WAIT FOR RESPONSE
     
+    char buffer[BUF_SIZE];
+    read(private_fd, buffer, BUF_SIZE);
+
+    //printf("%s\n", buffer);
+
+    if(close(private_fd) == -1) {
+        perror("Couldn't close private FIFO");
+        pthread_exit(NULL);
+    }
 
     enum Operation op = IWANT;
     print_log(msg, op);
@@ -54,17 +69,17 @@ int main(int argc, char * argv[]){
     }
 
     //Open public FIFO
-    int fd, timeout = 0;     
+    int timeout = 0;     
 
     do {
-        fd = open(flags->fifoname, O_WRONLY);
+        public_fd = open(flags->fifoname, O_WRONLY);
 
-        if (fd == -1){
+        if (public_fd == -1){
             timeout++;
             sleep(1);
         } 
             
-    } while (fd == -1 && timeout < 3);
+    } while (public_fd == -1 && timeout < 3);
 
     if(timeout == 3){ //Took too long to open 
         perror("Failed to open FIFO");
@@ -82,7 +97,7 @@ int main(int argc, char * argv[]){
         thrArg = (int *) malloc(sizeof(t));
         *thrArg = t + 1; //request number
 
-        if (pthread_create(&tid[t], NULL, thr_func, thrArg)){
+        if (pthread_create(&tid[t], NULL, send_request, thrArg)){
             perror("Failed to create thread");
             exit(1);
         }
@@ -99,7 +114,7 @@ int main(int argc, char * argv[]){
         pthread_join(tid[i], NULL);
     }
 
-    if(close(fd) == -1){
+    if(close(public_fd) == -1){
         perror("Failed closing fifo");
         exit(1);
     }
