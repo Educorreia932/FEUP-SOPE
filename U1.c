@@ -1,5 +1,6 @@
 #include <time.h>
 #include <sys/types.h>
+#include <semaphore.h>
 
 #include "flagsU.h"
 #include "log.h"
@@ -8,6 +9,8 @@
 #define MAX_STR 100
 
 flagsU* flags;
+
+sem_t mutex;
 
 void * thr_func(void * arg) { 
     
@@ -19,10 +22,20 @@ void * thr_func(void * arg) {
     char privateFIFO[MAX_STR];
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
     
+    int fd = open(privateFIFO, O_RDONLY | O_CREAT);
+
+    if (fd == -1 ) {
+        perror("Couldn't create private FIFO");
+        pthread_exit(NULL);
+    }
+
+    //WAIT HERE
+
+    
+
     enum Operation op = IWANT;
     print_log(msg, op);
-
-    return NULL;
+    pthread_exit(NULL);
 }
 
 int main(int argc, char * argv[]){
@@ -67,7 +80,7 @@ int main(int argc, char * argv[]){
     while( (time(NULL) - begin) < flags->nsecs && t < MAX_THREADS){
         
         thrArg = (int *) malloc(sizeof(t));
-        *thrArg = t + 1; //Number of request
+        *thrArg = t + 1; //request number
 
         if (pthread_create(&tid[t], NULL, thr_func, thrArg)){
             perror("Failed to create thread");

@@ -1,16 +1,12 @@
 #include "flagsQ.h"
+#include <semaphore.h>
 
-int readline(int fd, char *str) {
-    int n;
-    
-    do {
-        n = read(fd,str,1);
-    } while (n>0 && *str++ != '\0');
-    
-    return (n>0);
-} 
+#define BUF_SIZE 512
 
 int main(int argc, char * argv[]){
+
+    time_t begin = time(NULL);
+
     // Check Flags
     flagsQ* c = flagsQ_constructor();
      
@@ -33,6 +29,22 @@ int main(int argc, char * argv[]){
     if ((fd = open(c->fifoname,O_RDONLY)) == -1) {
         perror("Couldn't open FIFO.\n");
         exit(1);
+    }
+
+    while ((time(NULL) - begin) < c->nsecs) {
+
+        char request[BUF_SIZE];
+        int n = 0;
+
+        
+        if ((n = read(fd,&request,1)) == -1){
+            perror("Coudn´t read request");
+            exit(1);
+        }
+
+        printf("%s\n", request);
+
+
     }
 
     //Close and Delete FIFO
