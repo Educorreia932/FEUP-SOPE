@@ -1,34 +1,76 @@
 #include <time.h>
 #include <sys/types.h>
+#include <semaphore.h>
 
 #include "flagsU.h"
 #include "log.h"
 
-#define MAX_THREADS 10
-#define MAX_STR 100
+#include "utils.h"
 
 flagsU* flags;
 
-void * thr_func(void * arg) { 
+
+static int public_fd;
+
+
+void * send_request(void * arg) { 
     
-    char msg[MAX_STR];
+    char msg[BUF_SIZE];
     //[ i, pid, tid, dur, pl] 
     sprintf(msg, "%d, %d, %lu, %d", * (int *)arg, getpid(), pthread_self(), rand() % 200 + 50);
-
+    //printf("\n%s\n", msg);
+    
     //Name of privateFIFO
     char privateFIFO[MAX_STR];
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
     
+    int private_fd = open(privateFIFO, O_RDONLY | O_CREAT, 0666);
+
+    if (private_fd == -1 ) {
+        perror("Couldn't create private FIFO");
+        pthread_exit(NULL);
+    }
+
+    //CLOSE FIFO FOR READING
+
+    //send request
+    write(public_fd, msg, strlen(msg));
+
+    //UNLOCK FIFO FOR READING
+
+    //WAIT FOR RESPONSE
+    
+    char buffer[BUF_SIZE];
+    read(private_fd, buffer, BUF_SIZE);
+
+    if (buffer == "-"){
+        printf("rejeitado\n");
+    }
+    
+
+    if(close(private_fd) == -1) {
+        perror("Couldn't close private FIFO");
+        pthread_exit(NULL);
+    }
+
     enum Operation op = IWANT;
     print_log(msg, op);
-
-    return NULL;
+    pthread_exit(NULL);
 }
 
 int main(int argc, char * argv[]){
     
     //Begin Time count
     time_t begin = time(NULL);
+
+    //open semaphore
+    sem_t *sem;
+    sem = sem_open("sem1",0,0600,0); 
+
+    if(sem == SEM_FAILED)   {     
+        perror("WRITER failure in sem_open()");     
+        exit(4);   
+    }
 
     // Check Flags
     flags = flagsU_constructor(); 
@@ -41,17 +83,17 @@ int main(int argc, char * argv[]){
     }
 
     //Open public FIFO
-    int fd, timeout = 0;     
+    int timeout = 0;     
 
     do {
-        fd = open(flags->fifoname, O_WRONLY);
+        public_fd = open(flags->fifoname, O_WRONLY);
 
-        if (fd == -1){
+        if (public_fd == -1){
             timeout++;
             sleep(1);
         } 
             
-    } while (fd == -1 && timeout < 3);
+    } while (public_fd == -1 && timeout < 3);
 
     if(timeout == 3){ //Took too long to open 
         perror("Failed to open FIFO");
@@ -67,12 +109,14 @@ int main(int argc, char * argv[]){
     while( (time(NULL) - begin) < flags->nsecs && t < MAX_THREADS){
         
         thrArg = (int *) malloc(sizeof(t));
-        *thrArg = t + 1; //Number of request
+        *thrArg = t + 1; //request number
 
-        if (pthread_create(&tid[t], NULL, thr_func, thrArg)){
+        if (pthread_create(&tid[t], NULL, send_request, thrArg)){
             perror("Failed to create thread");
             exit(1);
         }
+
+        sem_post(sem);
 
         if(usleep(100)){
             perror("Failed sleeping");
@@ -86,7 +130,7 @@ int main(int argc, char * argv[]){
         pthread_join(tid[i], NULL);
     }
 
-    if(close(fd) == -1){
+    if(close(public_fd) == -1){
         perror("Failed closing fifo");
         exit(1);
     }
