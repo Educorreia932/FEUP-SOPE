@@ -9,20 +9,22 @@
 
 flagsU* flags;
 
-sem_t mutex;
+
 static int public_fd;
+
 
 void * send_request(void * arg) { 
     
-    char msg[MAX_STR];
+    char msg[BUF_SIZE];
     //[ i, pid, tid, dur, pl] 
     sprintf(msg, "%d, %d, %lu, %d", * (int *)arg, getpid(), pthread_self(), rand() % 200 + 50);
-
+    //printf("\n%s\n", msg);
+    
     //Name of privateFIFO
     char privateFIFO[MAX_STR];
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
     
-    int private_fd = open(privateFIFO, O_RDONLY | O_CREAT);
+    int private_fd = open(privateFIFO, O_RDONLY | O_CREAT, 0666);
 
     if (private_fd == -1 ) {
         perror("Couldn't create private FIFO");
@@ -41,7 +43,10 @@ void * send_request(void * arg) {
     char buffer[BUF_SIZE];
     read(private_fd, buffer, BUF_SIZE);
 
-    //printf("%s\n", buffer);
+    if (buffer == "-"){
+        printf("rejeitado\n");
+    }
+    
 
     if(close(private_fd) == -1) {
         perror("Couldn't close private FIFO");
@@ -57,6 +62,15 @@ int main(int argc, char * argv[]){
     
     //Begin Time count
     time_t begin = time(NULL);
+
+    //open semaphore
+    sem_t *sem;
+    sem = sem_open("sem1",0,0600,0); 
+
+    if(sem == SEM_FAILED)   {     
+        perror("WRITER failure in sem_open()");     
+        exit(4);   
+    }
 
     // Check Flags
     flags = flagsU_constructor(); 
@@ -101,6 +115,8 @@ int main(int argc, char * argv[]){
             perror("Failed to create thread");
             exit(1);
         }
+
+        sem_post(sem);
 
         if(usleep(100)){
             perror("Failed sleeping");

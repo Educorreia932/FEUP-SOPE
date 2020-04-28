@@ -5,14 +5,47 @@
 
 static int public_fd;
 
-
+extern sem_t mutex;
 void * handle_request(void * arg) { 
     
     char buffer[BUF_SIZE];
-
-    read(public_fd, buffer, BUF_SIZE);
-
+    strcpy(buffer, (char *)arg);
+    
+    // read(public_fd, buffer, BUF_SIZE);
     printf("%s\n", buffer);
+
+
+    char * pch;
+    pch = strtok(buffer, " ,");
+    
+    char pid[25] , tid[25];
+    int cnt = 0;
+    while(pch != NULL) {
+      
+        cnt++;
+    
+        pch = strtok(NULL, " ,");
+        if (cnt == 1){
+            strcpy(pid, pch);
+        }
+        else if (cnt == 2) {
+            strcpy(tid, pch);
+        }
+    }
+
+    char privateFIFO[MAX_STR];
+    sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
+    
+    int private_fd = open(privateFIFO, O_WRONLY);
+
+    if (private_fd == -1 ) {
+        printf("%s\n", privateFIFO);
+        perror("Couldn't open private FIFO");
+        pthread_exit(NULL);
+    }
+
+    write(private_fd, "-", strlen("-"));
+
 
     pthread_exit(NULL);
 }
@@ -23,7 +56,16 @@ int main(int argc, char * argv[]){
 
     // Check Flags
     flagsQ* c = flagsQ_constructor();
-     
+
+    //open semaphore
+    sem_t *sem;
+    sem = sem_open("sem1",O_CREAT,0600,0); 
+    
+    if(sem == SEM_FAILED)   {     
+        perror("WRITER failure in sem_open()");     
+        exit(4);   
+    }
+
     parse_flagsQ(argc, argv, c);
 
     if (argc != 4 /*8 in Part2*/ || c->fifoname == NULL || c->nsecs == 0) {
@@ -45,24 +87,20 @@ int main(int argc, char * argv[]){
     
     //Thread creating
     pthread_t tid[MAX_THREADS];
-    int *thrArg, t = 0;
-    
+    int t = 0;
+    char line[100];
+
     srand(time(NULL));
     while( (time(NULL) - begin) < c->nsecs && t < MAX_THREADS){
-        
-        thrArg = (int *) malloc(sizeof(t));
-        *thrArg = t + 1; //request number
 
-        if (pthread_create(&tid[t], NULL, handle_request, thrArg)){
-            perror("Failed to create thread");
-            exit(1);
-        }
+        if (read(public_fd, &line, BUF_SIZE) > 0){
 
-        if(usleep(200)){
-            perror("Failed sleeping");
-            exit(1);
+            if (pthread_create(&tid[t], NULL, handle_request, &line)){
+                perror("Failed to create thread");
+                exit(1);
+            }
         }
-        
+ 
         t++;
     }
     
