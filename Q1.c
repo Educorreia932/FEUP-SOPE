@@ -5,17 +5,16 @@
 
 static int public_fd;
 
-static sem_t *sem;
+//static sem_t *sem;
 
 void * handle_request(void * arg) { 
 
+    //Save request
 
     char buffer[BUF_SIZE];
     strcpy(buffer, (char *)arg);
-    
-    // read(public_fd, buffer, BUF_SIZE);
-    //printf("%s\n", buffer);
 
+    //Parse request
 
     char * pch;
     pch = strtok(buffer, " ,");
@@ -37,32 +36,68 @@ void * handle_request(void * arg) {
     }
 
     int i = atoi(ident);
-    //open semaphore
+
+    printf("Atendendo %d\n", i);
+
+    //OPEN semaphore
+/*
     char sem_name[50];
     sprintf(sem_name , "/sem%d", i);
-    sem = sem_open(sem_name,O_WRONLY,0600,0); 
+    sem = sem_open(sem_name,O_WRONLY); 
 
-    char privateFIFO[MAX_STR];
+
+    if(sem == SEM_FAILED)   {     
+        perror("WRITER failure in sem_open()");    
+        exit(1);   
+    }
+*/
+    //OPEN Private Fifo
+
+    char privateFIFO[BUF_SIZE];
+    int private_fd;
     sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
     
-    int private_fd = open(privateFIFO, O_WRONLY);
-
-    if (private_fd == -1 ) {
-        printf("%s\n", privateFIFO);
-        perror("Couldn't open private FIFO");
-        pthread_exit(NULL);
+    if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
+        perror("Couldn't open private FIFO.\n");
+        exit(1);
     }
 
-    printf("write %d\n", i);
+    //WRITE TO FIFO
+
     write(private_fd, "-", strlen("-"));
-    close(private_fd);
-    sem_post(sem);
-    printf("exit %d \n", i);
+    printf("write %d\n", i);
+
+ /*   
+    if(sem_post(sem) < 0){
+        perror("Failed to post sem");
+        exit(1);
+    }
+    
+    //WAIT CLIENT TO READ
+    if(sem_wait(sem) < 0){
+        perror("Failed to wait sem");
+        exit(1);
+    }
+*/
+    //CLOSE FIFO 
+    if(close(private_fd)){
+        perror("Failed to close private fifo");
+        exit(1);
+    }
+/*
+    //CLOSE SEM
+    if(sem_close(sem)){
+        perror("Failed to close sem");
+        exit(1);
+    }
+*/
+
     pthread_exit(NULL);
 }
 
 int main(int argc, char * argv[]){
 
+    //BEGIN TIME COUNT
     time_t begin = time(NULL);
 
     // Check Flags
@@ -77,6 +112,7 @@ int main(int argc, char * argv[]){
     }
 
     //Create and open public FIFO
+
     if(mkfifo(c->fifoname, 0660) == -1){
         perror("Failed to create fifo");
         exit(1);
@@ -86,22 +122,25 @@ int main(int argc, char * argv[]){
         perror("Couldn't open FIFO.\n");
         exit(1);
     }
-    
+
+
     //Thread creating
+
     pthread_t tid[MAX_THREADS];
     int t = 0;
     char line[100];
 
-    srand(time(NULL));
     while( (time(NULL) - begin) < c->nsecs && t < MAX_THREADS){
 
         if (read(public_fd, &line, BUF_SIZE) > 0){
-
+            printf("%s\n", line);
             if (pthread_create(&tid[t], NULL, handle_request, &line)){
                 perror("Failed to create thread");
                 exit(1);
             }
-             t++;
+            usleep(1000);
+
+            t++;
         }
  
        
