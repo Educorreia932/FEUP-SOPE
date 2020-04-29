@@ -11,9 +11,21 @@ flagsU* flags;
 
 
 static int public_fd;
-
+static sem_t *sem;
 
 void * send_request(void * arg) { 
+    
+    //open semaphore
+    char sem_name[50];
+    sprintf(sem_name , "/sem%d", *(int*) arg);
+    sem = sem_open(sem_name,O_CREAT,0600,0); 
+
+    if(sem == SEM_FAILED)   {     
+        perror("WRITER failure in sem_open()");     
+        exit(4);   
+    }
+
+    
     
     char msg[BUF_SIZE];
     //[ i, pid, tid, dur, pl] 
@@ -35,26 +47,32 @@ void * send_request(void * arg) {
 
     //send request
     write(public_fd, msg, strlen(msg));
-
+    
+sem_init(sem, 1, 0);
     //UNLOCK FIFO FOR READING
 
     //WAIT FOR RESPONSE
     
     char buffer[BUF_SIZE];
-    read(private_fd, buffer, BUF_SIZE);
 
-    if (buffer == "-"){
-        printf("rejeitado\n");
-    }
+    int asf;
+    sem_getvalue(sem,&asf);
+
+    printf("before %d\n", asf);
+
+    sem_wait(sem);
+
+    while (read(private_fd, buffer, BUF_SIZE) <= 0)
+        continue;
     
-
+    printf("%s\n", buffer);
     if(close(private_fd) == -1) {
         perror("Couldn't close private FIFO");
         pthread_exit(NULL);
     }
 
-    enum Operation op = IWANT;
-    print_log(msg, op);
+    // enum Operation op = IWANT;
+    // print_log(msg, op);
     pthread_exit(NULL);
 }
 
@@ -63,14 +81,6 @@ int main(int argc, char * argv[]){
     //Begin Time count
     time_t begin = time(NULL);
 
-    //open semaphore
-    sem_t *sem;
-    sem = sem_open("sem1",0,0600,0); 
-
-    if(sem == SEM_FAILED)   {     
-        perror("WRITER failure in sem_open()");     
-        exit(4);   
-    }
 
     // Check Flags
     flags = flagsU_constructor(); 
@@ -111,12 +121,11 @@ int main(int argc, char * argv[]){
         thrArg = (int *) malloc(sizeof(t));
         *thrArg = t + 1; //request number
 
+       
         if (pthread_create(&tid[t], NULL, send_request, thrArg)){
             perror("Failed to create thread");
             exit(1);
         }
-
-        sem_post(sem);
 
         if(usleep(100)){
             perror("Failed sleeping");

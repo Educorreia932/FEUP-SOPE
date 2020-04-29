@@ -5,21 +5,24 @@
 
 static int public_fd;
 
-extern sem_t mutex;
+static sem_t *sem;
+
 void * handle_request(void * arg) { 
-    
+
+
     char buffer[BUF_SIZE];
     strcpy(buffer, (char *)arg);
     
     // read(public_fd, buffer, BUF_SIZE);
-    printf("%s\n", buffer);
+    //printf("%s\n", buffer);
 
 
     char * pch;
     pch = strtok(buffer, " ,");
     
-    char pid[25] , tid[25];
+    char pid[25] , tid[25], ident[20];
     int cnt = 0;
+    strcpy(ident, pch);
     while(pch != NULL) {
       
         cnt++;
@@ -33,6 +36,12 @@ void * handle_request(void * arg) {
         }
     }
 
+    int i = atoi(ident);
+    //open semaphore
+    char sem_name[50];
+    sprintf(sem_name , "/sem%d", i);
+    sem = sem_open(sem_name,O_WRONLY,0600,0); 
+
     char privateFIFO[MAX_STR];
     sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
     
@@ -44,9 +53,11 @@ void * handle_request(void * arg) {
         pthread_exit(NULL);
     }
 
+    printf("write %d\n", i);
     write(private_fd, "-", strlen("-"));
-
-
+    close(private_fd);
+    sem_post(sem);
+    printf("exit %d \n", i);
     pthread_exit(NULL);
 }
 
@@ -56,15 +67,6 @@ int main(int argc, char * argv[]){
 
     // Check Flags
     flagsQ* c = flagsQ_constructor();
-
-    //open semaphore
-    sem_t *sem;
-    sem = sem_open("sem1",O_CREAT,0600,0); 
-    
-    if(sem == SEM_FAILED)   {     
-        perror("WRITER failure in sem_open()");     
-        exit(4);   
-    }
 
     parse_flagsQ(argc, argv, c);
 
@@ -99,9 +101,10 @@ int main(int argc, char * argv[]){
                 perror("Failed to create thread");
                 exit(1);
             }
+             t++;
         }
  
-        t++;
+       
     }
     
     for(int i = 0; i < t; i++){
