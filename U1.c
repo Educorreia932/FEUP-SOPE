@@ -11,21 +11,38 @@ flagsU* flags;
 
 
 static int public_fd;
-//static sem_t *sem;
+static sem_t *sem;
 
 void * send_request(void * arg) { 
     
     //OPEN SEMAPHORE
-/*
+
     char sem_name[50];
     sprintf(sem_name , "/sem%d", *(int*) arg);
     sem = sem_open(sem_name,O_CREAT,0600,0); 
 
     if(sem == SEM_FAILED)   {     
-        perror("WRITER failure in sem_open()");    
+        perror("[Client]WRITER failure in sem_open()");    
         exit(1);   
     }
-*/
+
+    
+    //PRIVATEFIFO
+
+    char privateFIFO[BUF_SIZE];
+    int private_fd;
+    sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
+    
+    if(mkfifo(privateFIFO, 0660) < 0){
+        perror("[Client]Failed to create fifo");
+        exit(1);
+    }
+
+    if ((private_fd = open(privateFIFO, O_NONBLOCK | O_RDONLY)) == -1) {
+        perror("[Client]Couldn't open FIFO.\n");
+        exit(1);
+    }
+
     //PREPARE MESSAGE
 
     char msg[BUF_SIZE];
@@ -43,64 +60,33 @@ void * send_request(void * arg) {
     //print_log(msg, op);
 
 
-    //PRIVATEFIFO
-
-    char privateFIFO[BUF_SIZE];
-    int private_fd;
-    sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
-    
-    if(mkfifo(privateFIFO, 0660) < 0){
-        perror("Failed to create fifo");
-        exit(1);
-    }
-
-    if ((private_fd = open(privateFIFO, O_RDONLY)) == -1) {
-        perror("Couldn't open FIFO.\n");
-        exit(1);
-    }
-
     //WAIT FOR RESPONSE
-/*
+
     if(sem_wait(sem) < 0){
-        perror("Failed to wait sem");
+        perror("[Client]Failed to wait sem");
         exit(1);
     }
-*/
+
     // READ
     char buffer[BUF_SIZE];
 
-    while (read(private_fd, buffer, BUF_SIZE) <= 0)
+    while (read(private_fd, buffer, BUF_SIZE) <= 0){
         continue;
-    
-/*
-    if(sem_post(sem) < 0){
-        perror("Failed to post sem");
-        exit(1);
     }
-*/    
+    
+    
     //UNLINK & CLOSE PRIVATE FIFO
 
     if(close(private_fd) == -1) {
-        perror("Couldn't close private FIFO");
+        perror("[Client]Couldn't close private FIFO");
         pthread_exit(NULL);
     }
 
     if(unlink(privateFIFO) == -1){
-        perror("Failed to delete FIFO");
+        perror("[Client]Failed to delete FIFO");
         exit(1);
     }
 
-/*  //UNLINK & CLOSE SEM
-    if(sem_close(sem)){
-        perror("Failed to close sem");
-        exit(1);
-    }
-
-    if(sem_unlink(sem_name) == -1){
-        perror("Failed to unlink sem");
-        exit(1);
-    }
- */
     pthread_exit(NULL);
 }
 

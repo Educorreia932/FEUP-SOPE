@@ -5,7 +5,7 @@
 
 static int public_fd;
 
-//static sem_t *sem;
+static sem_t *sem;
 
 void * handle_request(void * arg) { 
 
@@ -36,21 +36,21 @@ void * handle_request(void * arg) {
     }
 
     int i = atoi(ident);
+    free(arg);
 
     printf("Atendendo %d\n", i);
 
     //OPEN semaphore
-/*
+
     char sem_name[50];
     sprintf(sem_name , "/sem%d", i);
     sem = sem_open(sem_name,O_WRONLY); 
-
 
     if(sem == SEM_FAILED)   {     
         perror("WRITER failure in sem_open()");    
         exit(1);   
     }
-*/
+
     //OPEN Private Fifo
 
     char privateFIFO[BUF_SIZE];
@@ -58,7 +58,7 @@ void * handle_request(void * arg) {
     sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
     
     if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
-        perror("Couldn't open private FIFO.\n");
+        perror("[SERV]Couldn't open private FIFO.\n");
         exit(1);
     }
 
@@ -67,30 +67,18 @@ void * handle_request(void * arg) {
     write(private_fd, "-", strlen("-"));
     printf("write %d\n", i);
 
- /*   
+    
     if(sem_post(sem) < 0){
         perror("Failed to post sem");
         exit(1);
     }
     
-    //WAIT CLIENT TO READ
-    if(sem_wait(sem) < 0){
-        perror("Failed to wait sem");
-        exit(1);
-    }
-*/
     //CLOSE FIFO 
     if(close(private_fd)){
         perror("Failed to close private fifo");
         exit(1);
     }
-/*
-    //CLOSE SEM
-    if(sem_close(sem)){
-        perror("Failed to close sem");
-        exit(1);
-    }
-*/
+
 
     pthread_exit(NULL);
 }
