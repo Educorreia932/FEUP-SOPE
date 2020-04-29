@@ -128,17 +128,16 @@ int main(int argc, char * argv[]){
 
     pthread_t tid[MAX_THREADS];
     int t = 0;
-    char line[100];
+    char * line; 
 
     while( (time(NULL) - begin) < c->nsecs && t < MAX_THREADS){
-
-        if (read(public_fd, &line, BUF_SIZE) > 0){
-            printf("%s\n", line);
-            if (pthread_create(&tid[t], NULL, handle_request, &line)){
+        line = (char * )malloc(BUF_SIZE);
+        
+        if (read(public_fd, line, BUF_SIZE) > 0){
+            if (pthread_create(&tid[t], NULL, handle_request, (void *) line)){
                 perror("Failed to create thread");
                 exit(1);
             }
-            usleep(1000);
 
             t++;
         }
