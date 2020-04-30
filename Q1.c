@@ -13,29 +13,13 @@ void * handle_request(void * arg) {
     strcpy(buffer, (char *)arg);
 
     //Parse request
+    char pid[25] , tid[25];
+    char *array[3];
+    parse_request(buffer, array, 3);
 
-    char * pch;
-    pch = strtok(buffer, " ,");
-    
-    char pid[25] , tid[25], ident[20];
-    int cnt = 0;
-    strcpy(ident, pch);
-    while(pch != NULL) {
-      
-        cnt++;
-    
-        pch = strtok(NULL, " ,");
-        if (cnt == 1){
-            strcpy(pid, pch);
-        }
-        else if (cnt == 2) {
-            strcpy(tid, pch);
-        }
-    }
-
+    strcpy(pid, array[1]);
+    strcpy(tid, array[2]);
     free(arg);
-
-
 
     //OPEN Private Fifo
 
