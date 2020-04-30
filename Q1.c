@@ -1,11 +1,9 @@
 #include "flagsQ.h"
-#include <semaphore.h>
 
 #include "utils.h"
 
 static int public_fd;
 
-static sem_t *sem;
 
 void * handle_request(void * arg) { 
 
@@ -35,21 +33,9 @@ void * handle_request(void * arg) {
         }
     }
 
-    int i = atoi(ident);
     free(arg);
 
-    printf("Atendendo %d\n", i);
 
-    //OPEN semaphore
-
-    char sem_name[50];
-    sprintf(sem_name , "/sem%d", i);
-    sem = sem_open(sem_name,O_WRONLY); 
-
-    if(sem == SEM_FAILED)   {     
-        perror("WRITER failure in sem_open()");    
-        exit(1);   
-    }
 
     //OPEN Private Fifo
 
@@ -58,20 +44,20 @@ void * handle_request(void * arg) {
     sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
     
     if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
-        perror("[SERV]Couldn't open private FIFO.\n");
+        perror("[SERV] Couldn't open private FIFO.\n");
         exit(1);
     }
 
     //WRITE TO FIFO
+    int n = 0;
+    while ((n = write(private_fd, "-", strlen("-")+1)) == 0){
 
-    write(private_fd, "-", strlen("-"));
-    printf("write %d\n", i);
-
-    
-    if(sem_post(sem) < 0){
-        perror("Failed to post sem");
-        exit(1);
     }
+    if (n < 0){
+        perror("[SERV] Couldn't write to ptivate FIFO");
+        pthread_exit(NULL);
+    }
+    
     
     //CLOSE FIFO 
     if(close(private_fd)){
@@ -127,14 +113,11 @@ int main(int argc, char * argv[]){
                 exit(1);
             }
 
+            pthread_detach(tid[t]);
             t++;
         }
  
        
-    }
-    
-    for(int i = 0; i < t; i++){
-        pthread_join(tid[i], NULL);
     }
     
     //Close and Delete FIFO
@@ -148,5 +131,5 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
-    return 0;
+    pthread_exit(NULL);
 }

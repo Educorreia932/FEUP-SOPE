@@ -1,6 +1,5 @@
 #include <time.h>
 #include <sys/types.h>
-#include <semaphore.h>
 
 #include "flagsU.h"
 #include "log.h"
@@ -11,21 +10,8 @@ flagsU* flags;
 
 
 static int public_fd;
-static sem_t *sem;
 
 void * send_request(void * arg) { 
-    
-    //OPEN SEMAPHORE
-
-    char sem_name[50];
-    sprintf(sem_name , "/sem%d", *(int*) arg);
-    sem = sem_open(sem_name,O_CREAT,0600,0); 
-
-    if(sem == SEM_FAILED)   {     
-        perror("[Client]WRITER failure in sem_open()");    
-        exit(1);   
-    }
-
     
     //PRIVATEFIFO
 
@@ -33,18 +19,7 @@ void * send_request(void * arg) {
     int private_fd;
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
     
-    if(mkfifo(privateFIFO, 0660) < 0){
-        perror("[Client]Failed to create fifo");
-        exit(1);
-    }
-
-    if ((private_fd = open(privateFIFO, O_NONBLOCK | O_RDONLY)) == -1) {
-        perror("[Client]Couldn't open FIFO.\n");
-        exit(1);
-    }
-
     //PREPARE MESSAGE
-
     char msg[BUF_SIZE];
     //[ i, pid, tid, dur, pl] 
     sprintf(msg, "%d, %d, %lu, %d", * (int *)arg, getpid(), pthread_self(), rand() % 200 + 50);
@@ -53,27 +28,43 @@ void * send_request(void * arg) {
 
 
     //SEND REQUEST
+    int n = 0;
+    while ((n = write(public_fd, msg, strlen(msg)) == 0)){
+        continue;
+    }
 
-    write(public_fd, msg, strlen(msg) + 1);
+    if (n < 0) {
+        perror("[CLIENT] Couldn't write to public FIFO");
+        pthread_exit(NULL);
+    }
     
-    //enum Operation op = IWANT; //LOG
-    //print_log(msg, op);
-
-
-    //WAIT FOR RESPONSE
-
-    if(sem_wait(sem) < 0){
-        perror("[Client]Failed to wait sem");
+    if(mkfifo(privateFIFO, 0660) < 0){
+        perror("[Client]Failed to create fifo");
         exit(1);
     }
 
+    if ((private_fd = open(privateFIFO, O_RDONLY)) == -1) {
+        perror("[Client]Couldn't open FIFO.\n");
+        exit(1);
+    }
+    enum Operation op = IWANT; //LOG
+    print_log(msg, op);
+
+
+
     // READ
     char buffer[BUF_SIZE];
-
-    while (read(private_fd, buffer, BUF_SIZE) <= 0){
+    n = 0;
+    while ((n = read(private_fd, buffer, BUF_SIZE)) == 0){
         continue;
     }
-    
+
+    if (n < 0){
+        perror("[CLIENT] Couldn´t read private FIFO");
+        pthread_exit(NULL);
+    }  
+
+    printf("%s\n", buffer);
     
     //UNLINK & CLOSE PRIVATE FIFO
 
@@ -141,23 +132,22 @@ int main(int argc, char * argv[]){
             exit(1);
         }
 
+        pthread_detach(tid[t]);
         if(usleep(100)){
             perror("Failed sleeping");
             exit(1);
         }
         
+        
         t++;
     }
-    
-    for(int i = 0; i < t; i++){
-        pthread_join(tid[i], NULL);
-    }
+
 
     if(close(public_fd) == -1){
         perror("Failed closing fifo");
         exit(1);
     }
 
-    return 0;
+    pthread_exit(NULL);
 
 }
