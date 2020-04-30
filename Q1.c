@@ -5,21 +5,23 @@
 
 static int public_fd;
 
-extern sem_t mutex;
+static sem_t *sem;
+
 void * handle_request(void * arg) { 
-    
+
+    //Save request
+
     char buffer[BUF_SIZE];
     strcpy(buffer, (char *)arg);
-    
-    // read(public_fd, buffer, BUF_SIZE);
-    printf("%s\n", buffer);
 
+    //Parse request
 
     char * pch;
     pch = strtok(buffer, " ,");
     
-    char pid[25] , tid[25];
+    char pid[25] , tid[25], ident[20];
     int cnt = 0;
+    strcpy(ident, pch);
     while(pch != NULL) {
       
         cnt++;
@@ -33,18 +35,49 @@ void * handle_request(void * arg) {
         }
     }
 
-    char privateFIFO[MAX_STR];
-    sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
-    
-    int private_fd = open(privateFIFO, O_WRONLY);
+    int i = atoi(ident);
+    free(arg);
 
-    if (private_fd == -1 ) {
-        printf("%s\n", privateFIFO);
-        perror("Couldn't open private FIFO");
-        pthread_exit(NULL);
+    printf("Atendendo %d\n", i);
+
+    //OPEN semaphore
+
+    char sem_name[50];
+    sprintf(sem_name , "/sem%d", i);
+    sem = sem_open(sem_name,O_WRONLY); 
+
+    if(sem == SEM_FAILED)   {     
+        perror("WRITER failure in sem_open()");    
+        exit(1);   
     }
 
+    //OPEN Private Fifo
+
+    char privateFIFO[BUF_SIZE];
+    int private_fd;
+    sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
+    
+    if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
+        perror("[SERV]Couldn't open private FIFO.\n");
+        exit(1);
+    }
+
+    //WRITE TO FIFO
+
     write(private_fd, "-", strlen("-"));
+    printf("write %d\n", i);
+
+    
+    if(sem_post(sem) < 0){
+        perror("Failed to post sem");
+        exit(1);
+    }
+    
+    //CLOSE FIFO 
+    if(close(private_fd)){
+        perror("Failed to close private fifo");
+        exit(1);
+    }
 
 
     pthread_exit(NULL);
@@ -52,19 +85,11 @@ void * handle_request(void * arg) {
 
 int main(int argc, char * argv[]){
 
+    //BEGIN TIME COUNT
     time_t begin = time(NULL);
 
     // Check Flags
     flagsQ* c = flagsQ_constructor();
-
-    //open semaphore
-    sem_t *sem;
-    sem = sem_open("sem1",O_CREAT,0600,0); 
-    
-    if(sem == SEM_FAILED)   {     
-        perror("WRITER failure in sem_open()");     
-        exit(4);   
-    }
 
     parse_flagsQ(argc, argv, c);
 
@@ -75,6 +100,7 @@ int main(int argc, char * argv[]){
     }
 
     //Create and open public FIFO
+
     if(mkfifo(c->fifoname, 0660) == -1){
         perror("Failed to create fifo");
         exit(1);
@@ -84,24 +110,27 @@ int main(int argc, char * argv[]){
         perror("Couldn't open FIFO.\n");
         exit(1);
     }
-    
+
+
     //Thread creating
+
     pthread_t tid[MAX_THREADS];
     int t = 0;
-    char line[100];
+    char * line; 
 
-    srand(time(NULL));
     while( (time(NULL) - begin) < c->nsecs && t < MAX_THREADS){
-
-        if (read(public_fd, &line, BUF_SIZE) > 0){
-
-            if (pthread_create(&tid[t], NULL, handle_request, &line)){
+        line = (char * )malloc(BUF_SIZE);
+        
+        if (read(public_fd, line, BUF_SIZE) > 0){
+            if (pthread_create(&tid[t], NULL, handle_request, (void *) line)){
                 perror("Failed to create thread");
                 exit(1);
             }
+
+            t++;
         }
  
-        t++;
+       
     }
     
     for(int i = 0; i < t; i++){
