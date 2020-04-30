@@ -8,16 +8,12 @@ void * handle_request(void* arg) {
     //Save request
     message_t* message = (message_t*) arg;
 
-    printf("SERVER:%d\n", message->pid);
-
     //OPEN Private Fifo
 
     char privateFIFO[BUF_SIZE];
     int private_fd;
     sprintf(privateFIFO, "/tmp/%d.%lu", message->pid, message->tid);
 
-    printf("%s\n", privateFIFO);
-    
     if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
         perror("[SERVER] Couldn't open private FIFO.\n");
         exit(1);

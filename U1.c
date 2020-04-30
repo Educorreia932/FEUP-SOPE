@@ -78,14 +78,13 @@ void* send_request(void * arg) {
 }
 
 int main(int argc, char * argv[]){
-    //Begin Time count
-    time_t begin = time(NULL);
-
-
     // Check Flags
     flags = flagsU_constructor(); 
     
     parse_flagsU(argc, argv, flags);
+
+    //Begin Time count
+    time_t begin = time(NULL);
 
     if (argc != 4 || flags->fifoname == NULL || flags->nsecs == 0) {
         perror("Usage: U1 <-t nsecs> fifoname");
@@ -139,5 +138,4 @@ int main(int argc, char * argv[]){
     }
 
     pthread_exit(NULL);
-
 }
