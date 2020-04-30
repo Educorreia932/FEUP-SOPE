@@ -1,6 +1,6 @@
 #include "flagsQ.h"
-
 #include "utils.h"
+#include <stdbool.h>
 
 static int public_fd;
 
@@ -80,17 +80,34 @@ int main(int argc, char * argv[]){
 
     pthread_t tid;
     char* line; 
+    bool processing = true;
+    time_t time_took;
+    int n;
 
-    while ((time(NULL) - begin) < c->nsecs) {
+    while (((time_took = time(NULL) - begin) < c->nsecs) && processing) {
         line = (char*) malloc(BUF_SIZE);
         
-        if (read(public_fd, line, BUF_SIZE) > 0){
+        n = read(public_fd, line, BUF_SIZE);
+
+        if (n > 0) {
+
             if (pthread_create(&tid, NULL, handle_request, (void *) line)){
-                perror("Failed to create thread");
+                perror("[SERVER] Failed to create thread");
                 exit(1);
             }
 
             pthread_detach(tid);
+        }
+
+        else if (time_took && n == 0) {
+            free(line);
+            processing = false;
+        }
+
+        else {
+            perror("[SERVER] Failed to read public FIFO.\n");
+            free(line);
+            exit(1); // TODO: Close FIFO
         }
     }
     
