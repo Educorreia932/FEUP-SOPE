@@ -22,13 +22,13 @@ void * send_request(void * arg) {
     //PREPARE MESSAGE
     char msg[BUF_SIZE];
     //[ i, pid, tid, dur, pl] 
-    sprintf(msg, "%d, %d, %lu, %d", * (int *)arg, getpid(), pthread_self(), rand() % 200 + 50);
+    sprintf(msg, "%d, %d, %lu, %d", * (int*) arg, getpid(), pthread_self(), rand() % 200 + 50);
 
     free(arg);
 
-
     //SEND REQUEST
     int n = 0;
+
     while ((n = write(public_fd, msg, strlen(msg)) == 0)){
         continue;
     }
@@ -39,22 +39,22 @@ void * send_request(void * arg) {
     }
     
     if(mkfifo(privateFIFO, 0660) < 0){
-        perror("[Client]Failed to create fifo");
+        perror("[CLIENT] Failed to create fifo");
         exit(1);
     }
 
     if ((private_fd = open(privateFIFO, O_RDONLY)) == -1) {
-        perror("[Client]Couldn't open FIFO.\n");
+        perror("[CLIENT] Couldn't open FIFO.\n");
         exit(1);
     }
+
     enum Operation op = IWANT; //LOG
     print_log(msg, op);
-
-
 
     // READ
     char buffer[BUF_SIZE];
     n = 0;
+
     while ((n = read(private_fd, buffer, BUF_SIZE)) == 0){
         continue;
     }
@@ -66,15 +66,14 @@ void * send_request(void * arg) {
 
     printf("%s\n", buffer);
     
-    //UNLINK & CLOSE PRIVATE FIFO
-
-    if(close(private_fd) == -1) {
-        perror("[Client]Couldn't close private FIFO");
+    // UNLINK & CLOSE PRIVATE FIFO
+    if (close(private_fd) == -1) {
+        perror("[CLIENT] Couldn't close private FIFO");
         pthread_exit(NULL);
     }
 
-    if(unlink(privateFIFO) == -1){
-        perror("[Client]Failed to delete FIFO");
+    if (unlink(privateFIFO) == -1){
+        perror("[CLIENT] Failed to delete FIFO");
         exit(1);
     }
 
@@ -82,7 +81,6 @@ void * send_request(void * arg) {
 }
 
 int main(int argc, char * argv[]){
-    
     //Begin Time count
     time_t begin = time(NULL);
 
@@ -116,34 +114,31 @@ int main(int argc, char * argv[]){
     } 
 
     //Thread creating
-    pthread_t tid[MAX_THREADS];
+    pthread_t tid;
     int *thrArg, t = 0;
     
     srand(time(NULL));
 
-    while( (time(NULL) - begin) < flags->nsecs && t < MAX_THREADS){
-        
+    while ((time(NULL) - begin) < flags->nsecs){
         thrArg = (int *) malloc(sizeof(t));
-        *thrArg = t + 1; //request number
-
+        *thrArg = t + 1; // Request number
        
-        if (pthread_create(&tid[t], NULL, send_request, thrArg)){
+        if (pthread_create(&tid, NULL, send_request, thrArg)){
             perror("Failed to create thread");
             exit(1);
         }
 
-        pthread_detach(tid[t]);
-        if(usleep(100)){
+        pthread_detach(tid);
+
+        if (usleep(5000)) {
             perror("Failed sleeping");
             exit(1);
         }
         
-        
         t++;
     }
 
-
-    if(close(public_fd) == -1){
+    if (close(public_fd) == -1){
         perror("Failed closing fifo");
         exit(1);
     }

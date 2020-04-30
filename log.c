@@ -8,6 +8,7 @@ void print_log(char * msg, enum Operation op){
     }
 
     char operation[OP_LEN];
+    
     switch(op){
         case IWANT:
             sprintf(operation, "IWANT");
@@ -42,5 +43,4 @@ void print_log(char * msg, enum Operation op){
     sprintf(log, "%ld ; %s ; %s", time(NULL), msg, operation);
 
     printf("%s\n", log);
-
 }

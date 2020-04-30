@@ -4,9 +4,7 @@
 
 static int public_fd;
 
-
 void * handle_request(void * arg) { 
-
     //Save request
 
     char buffer[BUF_SIZE];
@@ -34,14 +32,14 @@ void * handle_request(void * arg) {
 
     //WRITE TO FIFO
     int n = 0;
-    while ((n = write(private_fd, "-", strlen("-")+1)) == 0){
 
-    }
+    while ((n = write(private_fd, "-", strlen("-")+1)) == 0)
+        continue;
+
     if (n < 0){
         perror("[SERV] Couldn't write to ptivate FIFO");
         pthread_exit(NULL);
     }
-    
     
     //CLOSE FIFO 
     if(close(private_fd)){
@@ -49,19 +47,17 @@ void * handle_request(void * arg) {
         exit(1);
     }
 
-
     pthread_exit(NULL);
 }
 
 int main(int argc, char * argv[]){
-
-    //BEGIN TIME COUNT
-    time_t begin = time(NULL);
-
     // Check Flags
     flagsQ* c = flagsQ_constructor();
 
     parse_flagsQ(argc, argv, c);
+
+    //BEGIN TIME COUNT
+    time_t begin = time(NULL);
 
     if (argc != 4 /*8 in Part2*/ || c->fifoname == NULL || c->nsecs == 0) {
         //perror("Usage: Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname");
@@ -69,9 +65,8 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
-    //Create and open public FIFO
-
-    if(mkfifo(c->fifoname, 0660) == -1){
+    // Create and open public FIFO
+    if (mkfifo(c->fifoname, 0660) == -1){
         perror("Failed to create fifo");
         exit(1);
     }
@@ -81,27 +76,22 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
+    // Thread creating
 
-    //Thread creating
+    pthread_t tid;
+    char* line; 
 
-    pthread_t tid[MAX_THREADS];
-    int t = 0;
-    char * line; 
-
-    while( (time(NULL) - begin) < c->nsecs && t < MAX_THREADS){
-        line = (char * )malloc(BUF_SIZE);
+    while ((time(NULL) - begin) < c->nsecs) {
+        line = (char*) malloc(BUF_SIZE);
         
         if (read(public_fd, line, BUF_SIZE) > 0){
-            if (pthread_create(&tid[t], NULL, handle_request, (void *) line)){
+            if (pthread_create(&tid, NULL, handle_request, (void *) line)){
                 perror("Failed to create thread");
                 exit(1);
             }
 
-            pthread_detach(tid[t]);
-            t++;
+            pthread_detach(tid);
         }
- 
-       
     }
     
     //Close and Delete FIFO
