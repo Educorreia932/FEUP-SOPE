@@ -4,36 +4,29 @@
 
 static int public_fd;
 
-void * handle_request(void * arg) { 
+void * handle_request(void* arg) { 
     //Save request
+    message_t* message = (message_t*) arg;
 
-    char buffer[BUF_SIZE];
-    strcpy(buffer, (char *)arg);
-
-    //Parse request
-    char pid[25] , tid[25];
-    char *array[3];
-    parse_request(buffer, array, 3);
-
-    strcpy(pid, array[1]);
-    strcpy(tid, array[2]);
-    free(arg);
+    printf("SERVER:%d\n", message->pid);
 
     //OPEN Private Fifo
 
     char privateFIFO[BUF_SIZE];
     int private_fd;
-    sprintf(privateFIFO, "/tmp/%s.%s", pid, tid);
+    sprintf(privateFIFO, "/tmp/%d.%lu", message->pid, message->tid);
+
+    printf("%s\n", privateFIFO);
     
     if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
-        perror("[SERV] Couldn't open private FIFO.\n");
+        perror("[SERVER] Couldn't open private FIFO.\n");
         exit(1);
     }
 
-    //WRITE TO FIFO
+    // WRITE TO FIFO
     int n = 0;
 
-    while ((n = write(private_fd, "-", strlen("-")+1)) == 0)
+    while ((n = write(private_fd, "-", strlen("-") + 1)) == 0)
         continue;
 
     if (n < 0){
@@ -41,11 +34,13 @@ void * handle_request(void * arg) {
         pthread_exit(NULL);
     }
     
-    //CLOSE FIFO 
+    // CLOSE FIFO 
     if(close(private_fd)){
         perror("Failed to close private fifo");
         exit(1);
     }
+
+    free(arg);
 
     pthread_exit(NULL);
 }
@@ -77,21 +72,19 @@ int main(int argc, char * argv[]){
     }
 
     // Thread creating
-
     pthread_t tid;
-    char* line; 
+    message_t* msg; 
     bool processing = true;
     time_t time_took;
     int n;
 
     while (((time_took = time(NULL) - begin) < c->nsecs) && processing) {
-        line = (char*) malloc(BUF_SIZE);
-        
-        n = read(public_fd, line, BUF_SIZE);
+        msg = (message_t*) malloc(sizeof(message_t));
+
+        n = read(public_fd, msg, sizeof(message_t));
 
         if (n > 0) {
-
-            if (pthread_create(&tid, NULL, handle_request, (void *) line)){
+            if (pthread_create(&tid, NULL, handle_request, (void*) msg)){
                 perror("[SERVER] Failed to create thread");
                 exit(1);
             }
@@ -100,25 +93,25 @@ int main(int argc, char * argv[]){
         }
 
         else if (time_took && n == 0) {
-            free(line);
+            free(msg);
             processing = false;
         }
 
         else {
             perror("[SERVER] Failed to read public FIFO.\n");
-            free(line);
+            free(msg);
             exit(1); // TODO: Close FIFO
         }
     }
-    
+
     //Close and Delete FIFO
     if(close(public_fd) == -1){
-        perror("Failed closing fifo");
+        perror("[SERVER] Failed closing fifo");
         exit(1);
     }
 
     if(unlink(c->fifoname) == -1){
-        perror("Failed to delete FIFO");
+        perror("[SERVER] Failed to delete FIFO");
         exit(1);
     }
 

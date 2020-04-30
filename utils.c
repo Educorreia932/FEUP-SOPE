@@ -2,22 +2,16 @@
 
 #include <stdio.h>
 
-void parse_request(char *buffer, char *array[], size_t size){
+message_t* message_constructor(int i) {
+    srand(time(NULL));
 
-    char * pch;
-    pch = strtok(buffer, " ,");
-    
-    int cnt = 0;
-    array[0] = pch;
-    while(pch != NULL) {
-      
-        cnt++;
-        pch = strtok(NULL, " ,");
-        if (cnt == 1){
-            array[1] = pch;
-        }
-        else if (cnt == 2) {
-            array[2] = pch;
-        }
-    }
+    message_t* message = (message_t*) malloc(sizeof(message_t));
+
+    message->i = i;
+    message->pid = getpid();
+    message->tid = pthread_self();
+    message->dur = rand() % 200 + 50;
+    message->pl = 0; // TODO: Second part
+
+    return message;
 }

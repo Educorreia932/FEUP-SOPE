@@ -8,11 +8,9 @@
 
 flagsU* flags;
 
-
 static int public_fd;
 
-void * send_request(void * arg) { 
-    
+void* send_request(void * arg) { 
     //PRIVATEFIFO
 
     char privateFIFO[BUF_SIZE];
@@ -20,16 +18,15 @@ void * send_request(void * arg) {
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
     
     //PREPARE MESSAGE
-    char msg[BUF_SIZE];
-    //[ i, pid, tid, dur, pl] 
-    sprintf(msg, "%d, %d, %lu, %d", * (int*) arg, getpid(), pthread_self(), rand() % 200 + 50);
+    
+    message_t* message = message_constructor(*(int*) arg);
 
     free(arg);
 
     //SEND REQUEST
     int n = 0;
 
-    while ((n = write(public_fd, msg, strlen(msg)) == 0)){
+    while ((n = write(public_fd, message, sizeof(message_t)) == 0)) {
         continue;
     }
 
@@ -49,7 +46,7 @@ void * send_request(void * arg) {
     }
 
     enum Operation op = IWANT; //LOG
-    print_log(msg, op);
+    print_log(message, op);
 
     // READ
     char buffer[BUF_SIZE];
@@ -113,11 +110,9 @@ int main(int argc, char * argv[]){
         exit(1);
     } 
 
-    //Thread creating
+    // Thread creating
     pthread_t tid;
     int *thrArg, t = 0;
-    
-    srand(time(NULL));
 
     while ((time(NULL) - begin) < flags->nsecs){
         thrArg = (int *) malloc(sizeof(t));

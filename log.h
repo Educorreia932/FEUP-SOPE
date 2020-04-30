@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "utils.h"
 
 #define OP_LEN 6
 
@@ -19,4 +20,4 @@ enum Operation {
     GAVUP
 };
 
-void print_log(char * msg, enum Operation op);
+void print_log(message_t* message, enum Operation op);

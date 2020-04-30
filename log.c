@@ -1,12 +1,6 @@
 #include "log.h"
 
-void print_log(char * msg, enum Operation op){
-
-    char * aux;
-    while( (aux = strstr(msg, ", ")) != NULL){ //Change ", " to " ; "
-        strncpy(aux, " ; ", 3);
-    }
-
+void print_log(message_t* message, enum Operation op) {
     char operation[OP_LEN];
     
     switch(op){
@@ -40,7 +34,7 @@ void print_log(char * msg, enum Operation op){
     }
 
     char log[200];
-    sprintf(log, "%ld ; %s ; %s", time(NULL), msg, operation);
+    sprintf(log, "%ld ; %d ; %d ; %lu ; %d ; %d ; %s", time(NULL), message->i, message->pid, message->tid, message->dur, message->pl, operation);
 
     printf("%s\n", log);
 }
