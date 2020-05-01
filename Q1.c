@@ -137,6 +137,6 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
-    free(flags);
+    free(c);
     pthread_exit(NULL);
 }
