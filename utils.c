@@ -3,8 +3,6 @@
 #include <stdio.h>
 
 message_t* message_constructor(int i) {
-    srand(time(NULL));
-
     message_t* message = (message_t*) malloc(sizeof(message_t));
 
     message->i = i;
@@ -14,5 +12,4 @@ message_t* message_constructor(int i) {
     message->pl = -1;
 
     return message;
-
 }

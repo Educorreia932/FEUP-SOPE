@@ -52,7 +52,6 @@ void * handle_request(void* arg) {
         usleep(message->dur);
         print_log(message, TIMUP);
     }
-
     
     // CLOSE FIFO 
     if(close(private_fd)){
@@ -96,7 +95,6 @@ int main(int argc, char * argv[]){
     message_t* msg; 
     int n;
     bool processing = true;
-
 
     while ( (wc_open = ((time(NULL) - begin) < c->nsecs)) && processing) {
         msg = (message_t*) malloc(sizeof(message_t));

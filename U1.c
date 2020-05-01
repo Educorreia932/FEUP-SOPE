@@ -22,8 +22,7 @@ void* send_request(void * arg) {
         exit(1);
     }
     
-    //PREPARE MESSAGE
-    
+    // PREPARE MESSAGE
     message_t* message = message_constructor(*(int*) arg);
 
     free(arg);
@@ -36,7 +35,7 @@ void* send_request(void * arg) {
         pthread_exit(NULL);
     }
     
-    else if(n > 0){
+    else if (n > 0){
         print_log(message, IWANT);
     }
 
@@ -79,6 +78,8 @@ void* send_request(void * arg) {
 }
 
 int main(int argc, char * argv[]){
+    srand(time(0));
+
     // Check Flags
     flags = flagsU_constructor(); 
     
