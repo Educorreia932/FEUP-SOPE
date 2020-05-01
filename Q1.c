@@ -4,6 +4,7 @@
 
 static int public_fd;
 
+
 void * handle_request(void* arg) { 
     //Save request
     message_t* message = (message_t*) arg;
@@ -13,7 +14,7 @@ void * handle_request(void* arg) {
     char privateFIFO[BUF_SIZE];
     int private_fd;
     sprintf(privateFIFO, "/tmp/%d.%lu", message->pid, message->tid);
-
+    
     if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
         perror("[SERVER] Couldn't open private FIFO.\n");
         exit(1);
@@ -22,12 +23,14 @@ void * handle_request(void* arg) {
     // WRITE TO FIFO
     int n = 0;
 
-    while ((n = write(private_fd, "-", strlen("-") + 1)) == 0)
-        continue;
-
+    n = write(private_fd, "-", strlen("-") + 1);
+    
     if (n < 0){
-        perror("[SERV] Couldn't write to ptivate FIFO");
+        perror("[SERV] Couldn't write to private FIFO");
         pthread_exit(NULL);
+    }
+    else if(n > 0){
+
     }
     
     // CLOSE FIFO 
@@ -70,11 +73,11 @@ int main(int argc, char * argv[]){
     // Thread creating
     pthread_t tid;
     message_t* msg; 
-    bool processing = true;
-    time_t time_took;
     int n;
+    bool processing = true, wc_open = false;
 
-    while (((time_took = time(NULL) - begin) < c->nsecs) && processing) {
+
+    while ( (wc_open = ((time(NULL) - begin) < c->nsecs)) && processing) {
         msg = (message_t*) malloc(sizeof(message_t));
 
         n = read(public_fd, msg, sizeof(message_t));
@@ -88,7 +91,7 @@ int main(int argc, char * argv[]){
             pthread_detach(tid);
         }
 
-        else if (time_took && n == 0) {
+        else if (n == 0) {
             free(msg);
             processing = false;
         }
@@ -98,6 +101,7 @@ int main(int argc, char * argv[]){
             free(msg);
             exit(1); // TODO: Close FIFO
         }
+
     }
 
     //Close and Delete FIFO
