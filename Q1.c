@@ -1,6 +1,8 @@
+#include <stdbool.h>
+
 #include "flagsQ.h"
 #include "utils.h"
-#include <stdbool.h>
+#include "log.h"
 
 static int public_fd;
 
@@ -83,6 +85,10 @@ int main(int argc, char * argv[]){
         n = read(public_fd, msg, sizeof(message_t));
 
         if (n > 0) {
+
+            enum Operation op = RECVD;
+            print_log(msg, RECVD);
+
             if (pthread_create(&tid, NULL, handle_request, (void*) msg)){
                 perror("[SERVER] Failed to create thread");
                 exit(1);

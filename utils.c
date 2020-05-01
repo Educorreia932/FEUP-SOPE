@@ -11,7 +11,7 @@ message_t* message_constructor(int i) {
     message->pid = getpid();
     message->tid = pthread_self();
     message->dur = rand() % 200 + 50;
-    message->pl = 0; // TODO: Second part
+    message->pl = -1;
 
     return message;
 }

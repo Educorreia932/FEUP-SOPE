@@ -1,4 +1,4 @@
-#include <flagsQ.h>
+#include "flagsQ.h"
 
 flagsQ* flagsQ_constructor() {
     flagsQ* c = (flagsQ*) malloc(sizeof(flagsQ));
