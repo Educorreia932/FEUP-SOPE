@@ -16,6 +16,11 @@ void* send_request(void * arg) {
     char privateFIFO[BUF_SIZE];
     int private_fd;
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
+
+    if(mkfifo(privateFIFO, 0660) < 0){
+        perror("[CLIENT] Failed to create fifo");
+        exit(1);
+    }
     
     //PREPARE MESSAGE
     
@@ -35,11 +40,7 @@ void* send_request(void * arg) {
         pthread_exit(NULL);
     }
     
-    if(mkfifo(privateFIFO, 0660) < 0){
-        perror("[CLIENT] Failed to create fifo");
-        exit(1);
-    }
-
+    //Open FIFO
     if ((private_fd = open(privateFIFO, O_RDONLY)) == -1) {
         perror("[CLIENT] Couldn't open FIFO.\n");
         exit(1);
