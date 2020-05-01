@@ -34,7 +34,7 @@ void print_log(message_t* message, enum Operation op) {
     }
 
     char log[200];
-    sprintf(log, "%ld ; %d ; %d ; %lu ; %d ; %d ; %s", time(NULL), message->i, message->pid, message->tid, message->dur, message->pl, operation);
+    sprintf(log, "%ld ; %d ; %d ; %lu ; %d ; %d ; %s", time(NULL), message->i, getpid(), pthread_self(), message->dur, message->pl, operation);
 
     printf("%s\n", log);
 }
