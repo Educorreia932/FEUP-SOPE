@@ -5,6 +5,7 @@
 #include "log.h"
 
 static int public_fd;
+static bool wc_open;
 
 
 void * handle_request(void* arg) { 
@@ -23,17 +24,35 @@ void * handle_request(void* arg) {
     }
 
     // WRITE TO FIFO
-    int n = 0;
 
-    n = write(private_fd, "-", strlen("-") + 1);
+    enum Operation op;
+
+    if(wc_open){
+        op = ENTER;
+        message->pl = message->i;
+    }
+    else{
+        op = LATE;
+        message->dur = -1;
+    }
+
+    int n = write(private_fd, message, sizeof(message_t));
     
     if (n < 0){
         perror("[SERV] Couldn't write to private FIFO");
         pthread_exit(NULL);
     }
     else if(n > 0){
-
+        print_log(message, op);
     }
+
+    //USE BATHROOM
+
+    if(op == ENTER){
+        usleep(message->dur);
+        print_log(message, TIMUP);
+    }
+
     
     // CLOSE FIFO 
     if(close(private_fd)){
@@ -76,7 +95,7 @@ int main(int argc, char * argv[]){
     pthread_t tid;
     message_t* msg; 
     int n;
-    bool processing = true, wc_open = false;
+    bool processing = true;
 
 
     while ( (wc_open = ((time(NULL) - begin) < c->nsecs)) && processing) {
@@ -85,8 +104,6 @@ int main(int argc, char * argv[]){
         n = read(public_fd, msg, sizeof(message_t));
 
         if (n > 0) {
-
-            enum Operation op = RECVD;
             print_log(msg, RECVD);
 
             if (pthread_create(&tid, NULL, handle_request, (void*) msg)){

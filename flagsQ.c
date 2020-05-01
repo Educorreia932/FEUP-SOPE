@@ -3,8 +3,8 @@
 flagsQ* flagsQ_constructor() {
     flagsQ* c = (flagsQ*) malloc(sizeof(flagsQ));
 
-    //c->nsecs = 0;
-    //c->fifoname = "";
+    c->nsecs = 0;
+    c->fifoname = "";
     //unsigned int nthreads = 0;
     //unsigned int nplaces = 0;
 

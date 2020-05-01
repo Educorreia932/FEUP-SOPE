@@ -29,40 +29,40 @@ void* send_request(void * arg) {
     free(arg);
 
     //SEND REQUEST
-    int n = 0;
-
-    while ((n = write(public_fd, message, sizeof(message_t)) == 0)) {
-        continue;
-    }
-
+    int n = write(public_fd, message, sizeof(message_t));
+  
     if (n < 0) {
         perror("[CLIENT] Couldn't write to public FIFO");
         pthread_exit(NULL);
     }
     
+    else if(n > 0){
+        print_log(message, IWANT);
+    }
+
     //Open FIFO
     if ((private_fd = open(privateFIFO, O_RDONLY)) == -1) {
         perror("[CLIENT] Couldn't open FIFO.\n");
         exit(1);
     }
 
-    enum Operation op = IWANT; //LOG
-    print_log(message, op);
-
     // READ
-    char buffer[BUF_SIZE];
-    n = 0;
-
-    while ((n = read(private_fd, buffer, BUF_SIZE)) == 0){
-        continue;
-    }
+    n = read(private_fd, message, sizeof(message_t));
 
     if (n < 0){
         perror("[CLIENT] Couldn´t read private FIFO");
         pthread_exit(NULL);
-    }  
+    }
+    else if (n > 0){
+        if(message->pl != -1)
+            print_log(message,IAMIN);
+        else
+            print_log(message,CLOSD);
+    }
+    else { //n=0
+        print_log(message, FAILD);
+    } 
 
-    printf("%s\n", buffer);
     
     // UNLINK & CLOSE PRIVATE FIFO
     if (close(private_fd) == -1) {
