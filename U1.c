@@ -120,6 +120,7 @@ int main(int argc, char * argv[]){
         *thrArg = t + 1; // Request number
        
         if (pthread_create(&tid, NULL, send_request, thrArg)){
+            free(thrArg);
             perror("Failed to create thread");
             exit(1);
         }
@@ -139,5 +140,6 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
+    free(flags);
     pthread_exit(NULL);
 }

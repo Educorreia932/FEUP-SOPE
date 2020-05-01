@@ -31,7 +31,8 @@ void * handle_request(void* arg) {
         op = ENTER;
         message->pl = message->i;
     }
-    else{
+    
+    else {
         op = LATE;
         message->dur = -1;
     }
@@ -136,5 +137,6 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
+    free(flags);
     pthread_exit(NULL);
 }
