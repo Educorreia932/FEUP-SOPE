@@ -103,12 +103,14 @@ int main(int argc, char * argv[]){
 
     // Thread creating
     pthread_t tid;
-    message_t* msg; 
+    message_t* msg;
     int n;
     bool processing = true;
 
-    while ( (wc_open = ((time(NULL) - begin) < c->nsecs)) && processing) {
+    while (processing) {
         msg = (message_t*) malloc(sizeof(message_t));
+
+        wc_open = ((time(NULL) - begin) < c->nsecs);
 
         n = read(public_fd, msg, sizeof(message_t));
 
