@@ -40,6 +40,8 @@ void * handle_request(void* arg) {
     int n = write(private_fd, message, sizeof(message_t));
     
     if (n < 0){
+        op = GAVUP;
+        print_log(message, op);
         perror("[SERV] Couldn't write to private FIFO");
         pthread_exit(NULL);
     }
