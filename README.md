@@ -27,6 +27,13 @@ Q1 <-t nsecs> fifoname
 Para esta primeira entrega do projeto, implementámos todas as funcionalidades referentes à mesma, no enunciado. 
 
 No início do programa, as flags de invocação são analisadas por cada um dos processos e guardadas na struct corresponde (flagsQ ou flagsU).
+O canal de comunicação público entre o cliente e o servidor é criado e o processo U começa a criar as threads (send_request) responsáveis pelo envio das mensagens.
+Estes threads começam por criar o fifo privado que servirá para receber a resposta do servidor. De seguida enviam o pedido no canal público e esperam pela resposta.
+
+Entretanto no lado do servidor o fifo público é aberto e imediatamente após a receção de uma mensagem é criado um thread (handle_request).
+A informação da mensagem recebida é utilizada para abrir o fifo privado e a resposta é subsequentemente enviada para este.
+
+Posteriormente, do lado do cliente, a resposta do servidor é lida e enviada para a stdout.
 
 O conteúdo das mensagens trocadas entre os dois processos é guardado numa struct do tipo message_t, que possui os seguintes campos:
 
