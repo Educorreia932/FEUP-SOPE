@@ -19,6 +19,7 @@ void * handle_request(void* arg) {
     sprintf(privateFIFO, "/tmp/%d.%lu", message->pid, message->tid);
     
     if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
+        free(arg);
         perror("[SERVER] Couldn't open private FIFO.\n");
         exit(1);
     }
@@ -40,12 +41,17 @@ void * handle_request(void* arg) {
     int n = write(private_fd, message, sizeof(message_t));
     
     if (n < 0){
-        op = GAVUP;
-        print_log(message, op);
+        free(arg);
         perror("[SERV] Couldn't write to private FIFO");
         pthread_exit(NULL);
     }
+    
     else if(n > 0){
+        print_log(message, op);
+    }
+    
+    else { // n = 0
+        op = GAVUP;
         print_log(message, op);
     }
 
@@ -58,6 +64,7 @@ void * handle_request(void* arg) {
     
     // CLOSE FIFO 
     if(close(private_fd)){
+        free(arg);
         perror("Failed to close private fifo");
         exit(1);
     }
@@ -89,6 +96,7 @@ int main(int argc, char * argv[]){
     }
 
     if ((public_fd = open(c->fifoname,O_RDONLY)) == -1) {
+        free(c);
         perror("Couldn't open FIFO.\n");
         exit(1);
     }
@@ -108,6 +116,8 @@ int main(int argc, char * argv[]){
             print_log(msg, RECVD);
 
             if (pthread_create(&tid, NULL, handle_request, (void*) msg)){
+                free(msg);
+                free(c);
                 perror("[SERVER] Failed to create thread");
                 exit(1);
             }
@@ -121,8 +131,10 @@ int main(int argc, char * argv[]){
         }
 
         else {
-            perror("[SERVER] Failed to read public FIFO.\n");
+            perror("[SERVER] Failed to read public FIFO.\n");            
             free(msg);
+            free(c);
+            close(public_fd);
             exit(1); // TODO: Close FIFO
         }
 
@@ -130,11 +142,13 @@ int main(int argc, char * argv[]){
 
     //Close and Delete FIFO
     if(close(public_fd) == -1){
+        free(c);
         perror("[SERVER] Failed closing fifo");
         exit(1);
     }
 
     if(unlink(c->fifoname) == -1){
+        free(c);
         perror("[SERVER] Failed to delete FIFO");
         exit(1);
     }

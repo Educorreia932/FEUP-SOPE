@@ -26,6 +26,7 @@ void parse_flagsU(int argc, char* argv[], flagsU* c) {
             unsigned int val = strtol(argument, &size, 10);
 
             if ((size == argument) || (*size != '\0')) {
+                free(c);
                 perror("Size must be an integer\n");
                 exit(1);
             }
@@ -36,6 +37,7 @@ void parse_flagsU(int argc, char* argv[], flagsU* c) {
         }
 
         else { // Checking for invalid arguments
+            free(c);
             printf("U1: invalid option %s\n", argv[i]);
             exit(1);
         }
