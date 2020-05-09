@@ -12,9 +12,8 @@
 typedef struct {
     unsigned int nsecs;
     char * fifoname;
-    //Parte 2
-    //unsigned int nthreads;
-    //unsigned int nplaces;
+    unsigned int nthreads;
+    unsigned int nplaces;
 } flagsQ;
 
 void parse_flagsQ(int argc, char* argv[], flagsQ* c);

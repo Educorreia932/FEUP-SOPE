@@ -5,8 +5,8 @@ flagsQ* flagsQ_constructor() {
 
     c->nsecs = 0;
     c->fifoname = "";
-    //unsigned int nthreads = 0;
-    //unsigned int nplaces = 0;
+    unsigned int nthreads = 0;
+    unsigned int nplaces = 0;
 
     return c;
 }
@@ -37,8 +37,7 @@ void parse_flagsQ(int argc, char* argv[], flagsQ* c) {
                 c->nsecs = val;
             i++;
         }
-        
-        /* FOR PART2
+
 
         else if (!strcmp(argv[i], "-l") && (i + 1 < argc)) { 
             char* argument = argv[i + 1];
@@ -70,7 +69,7 @@ void parse_flagsQ(int argc, char* argv[], flagsQ* c) {
             else
                 c->nthreads = val;
                 i++;
-        } */
+        } 
 
         else { // Checking for invalid arguments
             free(c);    
@@ -83,7 +82,6 @@ void parse_flagsQ(int argc, char* argv[], flagsQ* c) {
 void print_flagsQ(flagsQ* c) {
     printf("Fifoname: %s\n", c->fifoname);
     printf("Nsecs: %u\n", c->nsecs);
-    //Part2
-    //printf("Nthreads: %u\n", c->nthreads);
-    //printf("Nplaces: %u\n", c->nplaces);
+    printf("Nthreads: %u\n", c->nthreads);
+    printf("Nplaces: %u\n", c->nplaces);
 }
