@@ -8,13 +8,15 @@
 static int public_fd;
 static bool wc_open;
 
-static sem_t *mutex;
+static sem_t *num_threads, *avail_places, *can_check;
+static bool *occupied;
+
+static flagsQ *c;
 
 void * handle_request(void* arg) { 
 
     //Save request
     message_t* message = (message_t*) arg;
-
 
     //OPEN Private Fifo
 
@@ -32,10 +34,22 @@ void * handle_request(void* arg) {
 
     enum Operation op;
 
+    sem_wait(avail_places);
+    //sem_wait(can_check);
+    int i;
+    for (i = 0; i < c->nplaces; i++) {
+            if (!occupied[i]) {
+                occupied[i] = true;
+            }
+    }
+    //sem_post(can_check);
+
     if(wc_open){
         op = ENTER;
-        message->pl = message->i;
+        message->pl = i;
     }
+
+
     
     else {
         op = LATE;
@@ -64,6 +78,15 @@ void * handle_request(void* arg) {
     if(op == ENTER){
         usleep(message->dur);
         print_log(message, TIMUP);
+
+        if (sem_post(avail_places) == -1) {
+            perror("[SERVER] Failed to increment semaphore");
+            exit(1);
+        }
+
+        //sem_wait(can_check);
+        occupied[i] = false;
+        //sem_post(can_check);
     }
     
     // CLOSE FIFO 
@@ -75,10 +98,12 @@ void * handle_request(void* arg) {
 
     free(arg);
 
-    if (sem_post(mutex) == -1) {
+    if (sem_post(num_threads) == -1) {
         perror("[SERVER] Failed to increment semaphore");
         exit(1);
     }
+
+ 
 
     pthread_exit(NULL);
 }
@@ -86,14 +111,26 @@ void * handle_request(void* arg) {
 int main(int argc, char * argv[]){
 
     // Check Flags
-    flagsQ* c = flagsQ_constructor();
+    c = flagsQ_constructor();
 
-    mutex = (sem_t*) malloc(sizeof(sem_t));
+    num_threads = (sem_t*) malloc(sizeof(sem_t));
+    avail_places = (sem_t*) malloc(sizeof(sem_t));
+    can_check = (sem_t*) malloc(sizeof(sem_t));
 
     parse_flagsQ(argc, argv, c);
 
     //print_flagsQ(c);
-    if (sem_init(mutex, NOT_SHARED, c->nthreads) == -1){
+    if (sem_init(num_threads, NOT_SHARED, c->nthreads) == -1){
+        perror("Couldn't initiate semaphore.");
+        exit(1);
+    }
+
+    if (sem_init(avail_places, NOT_SHARED, c->nplaces) == -1){
+        perror("Couldn't initiate semaphore.");
+        exit(1);
+    }
+    
+    if (sem_init(avail_places, NOT_SHARED, 1) == -1){
         perror("Couldn't initiate semaphore.");
         exit(1);
     }
@@ -125,47 +162,49 @@ int main(int argc, char * argv[]){
     int n;
     bool processing = true;
 
+    occupied = (bool*) calloc(c->nplaces, sizeof(bool));
+
     while (processing) {
-        
+
         msg = (message_t*) malloc(sizeof(message_t));
 
         wc_open = ((time(NULL) - begin) < c->nsecs);
 
-            n = read(public_fd, msg, sizeof(message_t));
+        n = read(public_fd, msg, sizeof(message_t));
 
-            if (n > 0) {
+        if (n > 0) {
 
-                print_log(msg, RECVD);
+            print_log(msg, RECVD);
 
-                if (sem_wait(mutex) == -1){ //wait for available threads
-                    perror("[SERVER] Failed to decrement semaphore");
-                    exit(1);
-                } 
+            if (sem_wait(num_threads) == -1){ //wait for available threads
+                perror("[SERVER] Failed to decrement semaphore");
+                exit(1);
+            } 
 
-                if (pthread_create(&tid, NULL, handle_request, (void*) msg)){
-                    free(msg);
-                    free(c);
-                    perror("[SERVER] Failed to create thread");
-                    exit(1);
-                }
-
-                c->nthreads--;
-
-                pthread_detach(tid);
-            }
-            else if (n == 0) {
-                free(msg);
-                processing = false;
-            }
-            else {
-                perror("[SERVER] Failed to read public FIFO.\n");            
+            if (pthread_create(&tid, NULL, handle_request, (void*) msg)){
                 free(msg);
                 free(c);
-                close(public_fd);
-                exit(1); // TODO: Close FIFO
+                perror("[SERVER] Failed to create thread");
+                exit(1);
             }
-        
-   
+
+            
+
+            c->nthreads--;
+
+            pthread_detach(tid);
+        }
+        else if (n == 0) {
+            free(msg);
+            processing = false;
+        }
+        else {
+            perror("[SERVER] Failed to read public FIFO.\n");            
+            free(msg);
+            free(c);
+            close(public_fd);
+            exit(1); // TODO: Close FIFO
+        }
 
     }
 
@@ -183,7 +222,9 @@ int main(int argc, char * argv[]){
     }
 
     free(c);
-    free(mutex);
+    free(num_threads);
+    free(avail_places);
+    free(can_check);
 
     pthread_exit(NULL);
 }
