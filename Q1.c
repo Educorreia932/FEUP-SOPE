@@ -34,15 +34,17 @@ void * handle_request(void* arg) {
 
     enum Operation op;
 
-    sem_wait(avail_places);
-    //sem_wait(can_check);
+    sem_wait(avail_places); 
+
+    sem_wait(can_check);
     int i;
     for (i = 0; i < c->nplaces; i++) {
             if (!occupied[i]) {
                 occupied[i] = true;
+                break;
             }
     }
-    //sem_post(can_check);
+    sem_post(can_check);
 
     if(wc_open){
         op = ENTER;
@@ -84,9 +86,9 @@ void * handle_request(void* arg) {
             exit(1);
         }
 
-        //sem_wait(can_check);
+        sem_wait(can_check);
         occupied[i] = false;
-        //sem_post(can_check);
+        sem_post(can_check);
     }
     
     // CLOSE FIFO 
@@ -129,8 +131,8 @@ int main(int argc, char * argv[]){
         perror("Couldn't initiate semaphore.");
         exit(1);
     }
-    
-    if (sem_init(avail_places, NOT_SHARED, 1) == -1){
+
+    if (sem_init(can_check, NOT_SHARED, 1) == -1){
         perror("Couldn't initiate semaphore.");
         exit(1);
     }
@@ -188,9 +190,6 @@ int main(int argc, char * argv[]){
                 exit(1);
             }
 
-            
-
-            c->nthreads--;
 
             pthread_detach(tid);
         }
