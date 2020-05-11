@@ -34,25 +34,27 @@ void * handle_request(void* arg) {
 
     enum Operation op;
 
-    sem_wait(avail_places); 
-
-    sem_wait(can_check);
-    int i;
-    for (i = 0; i < c->nplaces; i++) {
-            if (!occupied[i]) {
-                occupied[i] = true;
-                break;
-            }
-    }
-    sem_post(can_check);
-
+    
+    int place;
     if(wc_open){
         op = ENTER;
-        message->pl = i;
-    }
-
-
     
+        sem_wait(avail_places); 
+
+        sem_wait(can_check);
+
+        
+        for (int i = 0; i < c->nplaces; i++) {
+                if (!occupied[i]) {
+                    occupied[i] = true;
+                    place = i;
+                    break;
+                }
+        }
+        sem_post(can_check);
+
+        message->pl = place;
+    }
     else {
         op = LATE;
         message->dur = -1;
@@ -81,8 +83,15 @@ void * handle_request(void* arg) {
         usleep(message->dur);
         print_log(message, TIMUP);
 
+        
+
+        if (sem_post(avail_places) == -1) {
+            perror("[SERVER] Failed to increment semaphore");
+            exit(1);
+        }
+
         sem_wait(can_check);
-        occupied[i] = false;
+        occupied[place] = false;
         sem_post(can_check);
     }
     
@@ -101,10 +110,7 @@ void * handle_request(void* arg) {
     }
 
  
-    if (sem_post(avail_places) == -1) {
-            perror("[SERVER] Failed to increment semaphore");
-            exit(1);
-    }
+   
 
     pthread_exit(NULL);
 }
