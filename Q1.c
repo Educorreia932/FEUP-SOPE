@@ -33,31 +33,33 @@ void * handle_request(void* arg) {
     // WRITE TO FIFO
 
     enum Operation op;
-
-    
     int place;
+    
     if(wc_open){
         op = ENTER;
     
         if (sem_wait(avail_places) == -1) {
+            free(arg);
             perror("[SERVER] Failed to decrement semaphore.");
             exit(1);
         }
 
         if (sem_wait(can_check) == -1) {
+            free(arg);
             perror("[SERVER] Failed to decrement semaphore.");
             exit(1);
         }
-
         
         for (int i = 0; i < c->nplaces; i++) {
-                if (!occupied[i]) {
-                    occupied[i] = true;
-                    place = i;
-                    break;
-                }
+            if (!occupied[i]) {
+                occupied[i] = true;
+                place = i;
+                break;
+            }
         }
+        
         if (sem_post(can_check) == -1) {
+            free(arg);
             perror("[SERVER] Failed to increment semaphore.");
             exit(1);
         }
@@ -90,34 +92,36 @@ void * handle_request(void* arg) {
 
     if(op == ENTER){
         usleep(message->dur);
-        print_log(message, TIMUP);
+        print_log(message, TIMUP);  
 
-        
+        if (sem_wait(can_check) == -1){
+            free(arg);
+            perror("[SERVER] Failed to decrement semaphore.");
+            exit(1);
+        }
+
+        occupied[place] = false;
 
         if (sem_post(avail_places) == -1) {
+            free(arg);
             perror("[SERVER] Failed to increment semaphore");
             exit(1);
         }
 
-        if (sem_wait(can_check) == -1){
-            perror("[SERVER] Failed to decrement semaphore.");
-            exit(1);
-        }
-        occupied[place] = false;
         if (sem_post(can_check) == -1) {
+            free(arg);
             perror("[SERVER] Failed to increment semaphore.");
             exit(1);
         }
     }
     
+    free(arg);
+
     // CLOSE FIFO 
     if(close(private_fd)){
-        free(arg);
         perror("Failed to close private fifo");
         exit(1);
     }
-
-    free(arg);
 
     if (sem_post(num_threads) == -1) {
         perror("[SERVER] Failed to increment semaphore");
@@ -138,7 +142,6 @@ int main(int argc, char * argv[]){
 
     parse_flagsQ(argc, argv, c);
 
-    //print_flagsQ(c);
     if (sem_init(num_threads, NOT_SHARED, c->nthreads) == -1){
         perror("Couldn't initiate semaphore.");
         exit(1);
@@ -196,6 +199,8 @@ int main(int argc, char * argv[]){
             print_log(msg, RECVD);
 
             if (sem_wait(num_threads) == -1){ //wait for available threads
+                free(msg);
+                free(c);
                 perror("[SERVER] Failed to decrement semaphore");
                 exit(1);
             } 
@@ -206,7 +211,6 @@ int main(int argc, char * argv[]){
                 perror("[SERVER] Failed to create thread");
                 exit(1);
             }
-
 
             pthread_detach(tid);
         }
