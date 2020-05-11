@@ -39,9 +39,15 @@ void * handle_request(void* arg) {
     if(wc_open){
         op = ENTER;
     
-        sem_wait(avail_places); 
+        if (sem_wait(avail_places) == -1) {
+            perror("[SERVER] Failed to decrement semaphore.");
+            exit(1);
+        }
 
-        sem_wait(can_check);
+        if (sem_wait(can_check) == -1) {
+            perror("[SERVER] Failed to decrement semaphore.");
+            exit(1);
+        }
 
         
         for (int i = 0; i < c->nplaces; i++) {
@@ -51,7 +57,10 @@ void * handle_request(void* arg) {
                     break;
                 }
         }
-        sem_post(can_check);
+        if (sem_post(can_check) == -1) {
+            perror("[SERVER] Failed to increment semaphore.");
+            exit(1);
+        }
 
         message->pl = place;
     }
@@ -90,9 +99,15 @@ void * handle_request(void* arg) {
             exit(1);
         }
 
-        sem_wait(can_check);
+        if (sem_wait(can_check) == -1){
+            perror("[SERVER] Failed to decrement semaphore.");
+            exit(1);
+        }
         occupied[place] = false;
-        sem_post(can_check);
+        if (sem_post(can_check) == -1) {
+            perror("[SERVER] Failed to increment semaphore.");
+            exit(1);
+        }
     }
     
     // CLOSE FIFO 
@@ -108,9 +123,6 @@ void * handle_request(void* arg) {
         perror("[SERVER] Failed to increment semaphore");
         exit(1);
     }
-
- 
-   
 
     pthread_exit(NULL);
 }
