@@ -81,11 +81,6 @@ void * handle_request(void* arg) {
         usleep(message->dur);
         print_log(message, TIMUP);
 
-        if (sem_post(avail_places) == -1) {
-            perror("[SERVER] Failed to increment semaphore");
-            exit(1);
-        }
-
         sem_wait(can_check);
         occupied[i] = false;
         sem_post(can_check);
@@ -106,6 +101,10 @@ void * handle_request(void* arg) {
     }
 
  
+    if (sem_post(avail_places) == -1) {
+            perror("[SERVER] Failed to increment semaphore");
+            exit(1);
+    }
 
     pthread_exit(NULL);
 }
