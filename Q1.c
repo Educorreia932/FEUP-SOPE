@@ -241,10 +241,10 @@ int main(int argc, char * argv[]){
         exit(1);
     }
 
-    free(c);
-    free(num_threads);
-    free(avail_places);
-    free(can_check);
+    //free(c);
+    //free(num_threads);
+    //free(avail_places);
+    //free(can_check);
 
     pthread_exit(NULL);
 }
