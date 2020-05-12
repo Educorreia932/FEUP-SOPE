@@ -28,7 +28,7 @@ void parse_flagsQ(int argc, char* argv[], flagsQ* c) {
             unsigned int val = strtol(argument, &size, 10);
 
             if ((size == argument) || (*size != '\0')) {
-                free(c);
+                //free(c);
                 perror("Size must be an integer\n");
                 exit(1);
             }
@@ -72,7 +72,7 @@ void parse_flagsQ(int argc, char* argv[], flagsQ* c) {
         } 
 
         else { // Checking for invalid arguments
-            free(c);    
+            //free(c);    
             printf("Q1: invalid option %s\n", argv[i]);
             exit(1);
         }
