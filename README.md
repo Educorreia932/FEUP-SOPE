@@ -24,7 +24,7 @@ Q2 <-t nsecs> fifoname [-l nplaces] [-n threads]
 
 ## Funcionamento
 
-Para esta primeira entrega do projeto, implementámos todas as funcionalidades referentes à mesma, no enunciado. 
+Para esta segunda entrega do projeto, implementámos todas as funcionalidades referentes à mesma, no enunciado. 
 
 No início do programa, as flags de invocação são analisadas por cada um dos processos e guardadas na struct corresponde (flagsQ ou flagsU).
 O canal de comunicação público entre o cliente e o servidor é criado e o processo U começa a criar as threads (send_request) responsáveis pelo envio das mensagens.
@@ -48,7 +48,8 @@ Banho estar em vias de encerrar, o servidor responde aqui com o valor -1
 preenchido com o valor -1 e na resposta terá o valor do lugar efetivamente ocupado ou também -1,
 na sequência de insucesso de ocupação, por motivo de encerramento)
 
-Assumiu-se que a capacidade inicial da casa-de-banho seria ilimitada, recebendo pedidos de 5ms em 5ms e cada um com uma duração aleatória dentro de um intervalo definido.
+Assumiu-se que, caso não fosse especificada, a capacidade inicial da casa-de-banho seria ilimitada, recebendo pedidos de 5ms em 5ms e cada um com uma duração aleatória dentro de um intervalo definido.
+Do mesmo modo, se não for indicado um número máximo de threads, serão criados tantos quanto necessários.
 
 ## Registo
 
