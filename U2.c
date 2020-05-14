@@ -88,14 +88,16 @@ int main(int argc, char * argv[]){
     
     parse_flagsU(argc, argv, flags);
 
-    //Begin Time count
-    time_t begin = time(NULL);
 
     if (argc != 4 || flags->fifoname == NULL || flags->nsecs == 0) {
         free(flags);
-        perror("Usage: U1 <-t nsecs> fifoname");
+        perror("Usage: U2 <-t nsecs> fifoname");
         exit(1);
     }
+
+    //Begin Time count
+    time_t begin = time(NULL);
+
 
     //Open public FIFO
     int timeout = 0;     

@@ -115,7 +115,7 @@ void * handle_request(void* arg) {
         }
     }
     
-    //free(arg);
+    free(arg);
 
     // CLOSE FIFO 
     if(close(private_fd)){
@@ -142,7 +142,7 @@ int main(int argc, char * argv[]){
     parse_flagsQ(argc, argv, c);
 
     if ( (argc != 4 && argc != 8) || c->fifoname == NULL || c->nsecs == 0) {
-        perror("Usage: Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname");
+        perror("Usage: Q2 <-t nsecs> [-l nplaces] [-n nthreads] fifoname");
         //perror("Usage: Q1 <-t nsecs> fifoname");
         exit(1);
     }

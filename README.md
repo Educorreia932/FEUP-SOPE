@@ -13,13 +13,13 @@ A execução do programa passa por dois processos diferentes, correspondentes ao
 ### Cliente
 
 ```shell
-U1 <-t nsecs>  fifoname
+U2 <-t nsecs>  fifoname
 ```
 
 ### Servidor
 
 ```shell
-Q1 <-t nsecs> fifoname
+Q2 <-t nsecs> fifoname [-l nplaces] [-n threads]
 ```
 
 ## Funcionamento
