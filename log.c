@@ -35,7 +35,7 @@ void print_log(message_t* message, enum Operation op) {
 
     char log[200];
     if(sprintf(log, "%ld ; %d ; %d ; %lu ; %d ; %d ; %s", time(NULL), message->i, getpid(), pthread_self(), message->dur, message->pl, operation) < 0){
-        //free(message);
+        free(message);
         perror("Fail on sprintf");
         exit(1);
     }

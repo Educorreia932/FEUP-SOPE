@@ -25,7 +25,7 @@ void * handle_request(void* arg) {
     sprintf(privateFIFO, "/tmp/%d.%lu", message->pid, message->tid);
     
     if ((private_fd = open(privateFIFO, O_WRONLY)) == -1) {
-        //free(arg);
+        free(arg);
         perror("[SERVER] Couldn't open private FIFO.\n");
         exit(1);
     }
@@ -39,13 +39,13 @@ void * handle_request(void* arg) {
         op = ENTER;
     
         if (sem_wait(avail_places) == -1) {
-            //free(arg);
+            free(arg);
             perror("[SERVER] Failed to decrement semaphore.");
             exit(1);
         }
 
         if (sem_wait(can_check) == -1) {
-            //free(arg);
+            free(arg);
             perror("[SERVER] Failed to decrement semaphore.");
             exit(1);
         }
@@ -59,7 +59,7 @@ void * handle_request(void* arg) {
         }
         
         if (sem_post(can_check) == -1) {
-            //free(arg);
+            free(arg);
             perror("[SERVER] Failed to increment semaphore.");
             exit(1);
         }
@@ -74,7 +74,7 @@ void * handle_request(void* arg) {
     int n = write(private_fd, message, sizeof(message_t));
     
     if (n < 0){
-        //free(arg);
+        free(arg);
         perror("[SERV] Couldn't write to private FIFO");
         pthread_exit(NULL);
     }
@@ -95,7 +95,7 @@ void * handle_request(void* arg) {
         print_log(message, TIMUP);  
 
         if (sem_wait(can_check) == -1){
-            //free(arg);
+            free(arg);
             perror("[SERVER] Failed to decrement semaphore.");
             exit(1);
         }
@@ -103,13 +103,13 @@ void * handle_request(void* arg) {
         occupied[place] = false;
 
         if (sem_post(avail_places) == -1) {
-            //free(arg);
+            free(arg);
             perror("[SERVER] Failed to increment semaphore");
             exit(1);
         }
 
         if (sem_post(can_check) == -1) {
-            //free(arg);
+            free(arg);
             perror("[SERVER] Failed to increment semaphore.");
             exit(1);
         }
@@ -131,7 +131,11 @@ void * handle_request(void* arg) {
     pthread_exit(NULL);
 }
 
+void freeFunction(void);
+
 int main(int argc, char * argv[]){
+    
+    atexit(freeFunction);
 
     // Check Flags
     c = flagsQ_constructor();
@@ -139,6 +143,7 @@ int main(int argc, char * argv[]){
     num_threads = (sem_t*) malloc(sizeof(sem_t));
     avail_places = (sem_t*) malloc(sizeof(sem_t));
     can_check = (sem_t*) malloc(sizeof(sem_t));
+
 
     parse_flagsQ(argc, argv, c);
 
@@ -173,7 +178,6 @@ int main(int argc, char * argv[]){
     }
 
     if ((public_fd = open(c->fifoname,O_RDONLY)) == -1) {
-        //free(c);
         perror("Couldn't open FIFO.\n");
         exit(1);
     }
@@ -199,15 +203,13 @@ int main(int argc, char * argv[]){
             print_log(msg, RECVD);
 
             if (sem_wait(num_threads) == -1){ //wait for available threads
-                //free(msg);
-                //free(c);
+                free(msg);
                 perror("[SERVER] Failed to decrement semaphore");
                 exit(1);
             } 
 
             if (pthread_create(&tid, NULL, handle_request, (void*) msg)){
-                //free(msg);
-                //free(c);
+                free(msg);
                 perror("[SERVER] Failed to create thread");
                 exit(1);
             }
@@ -215,13 +217,12 @@ int main(int argc, char * argv[]){
             pthread_detach(tid);
         }
         else if (n == 0) {
-            //free(msg);
+            free(msg);
             processing = false;
         }
         else {
             perror("[SERVER] Failed to read public FIFO.\n");            
-            //free(msg);
-            //free(c);
+            free(msg);
             close(public_fd);
             exit(1); // TODO: Close FIFO
         }
@@ -230,21 +231,21 @@ int main(int argc, char * argv[]){
 
     //Close and Delete FIFO
     if(close(public_fd) == -1){
-        //free(c);
         perror("[SERVER] Failed closing fifo");
         exit(1);
     }
 
     if(unlink(c->fifoname) == -1){
-        //free(c);
         perror("[SERVER] Failed to delete FIFO");
         exit(1);
     }
 
-    //free(c);
-    //free(num_threads);
-    //free(avail_places);
-    //free(can_check);
-
     pthread_exit(NULL);
+}
+
+void freeFunction(void){
+    free(c);
+    free(num_threads);
+    free(avail_places);
+    free(can_check);
 }

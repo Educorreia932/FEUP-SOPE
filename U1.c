@@ -11,14 +11,12 @@ flagsU* flags;
 static int public_fd;
 
 void* send_request(void * arg) { 
-    //PRIVATEFIFO
-
     char privateFIFO[BUF_SIZE];
     int private_fd;
     sprintf(privateFIFO, "/tmp/%d.%lu", getpid(), pthread_self());
 
     if(mkfifo(privateFIFO, 0660) < 0){
-        //free(arg);
+        free(arg);
         perror("[CLIENT] Failed to create fifo");
         exit(1);
     }
@@ -26,13 +24,13 @@ void* send_request(void * arg) {
     // PREPARE MESSAGE
     message_t* message = message_constructor(*(int*) arg);
 
-    //free(arg);
+    free(arg);
 
     //SEND REQUEST
     int n = write(public_fd, message, sizeof(message_t));
   
     if (n < 0) {
-        //free(message);
+        free(message);
         perror("[CLIENT] Couldn't write to public FIFO");
         pthread_exit(NULL);
     }
@@ -43,7 +41,7 @@ void* send_request(void * arg) {
 
     //Open FIFO
     if ((private_fd = open(privateFIFO, O_RDONLY)) == -1) {
-        //free(message);
+        free(message);
         perror("[CLIENT] Couldn't open FIFO.\n");
         exit(1);
     }
@@ -52,7 +50,7 @@ void* send_request(void * arg) {
     n = read(private_fd, message, sizeof(message_t));
 
     if (n < 0){
-        //free(message);
+        free(message);
         perror("[CLIENT] Couldn´t read private FIFO");
         pthread_exit(NULL);
     }
@@ -66,21 +64,19 @@ void* send_request(void * arg) {
         print_log(message, FAILD);
     } 
 
+    free(message);
     
     // UNLINK & CLOSE PRIVATE FIFO
     if (close(private_fd) == -1) {
-        //free(message);
         perror("[CLIENT] Couldn't close private FIFO");
         pthread_exit(NULL);
     }
 
     if (unlink(privateFIFO) == -1){
-        //free(message);
         perror("[CLIENT] Failed to delete FIFO");
         exit(1);
     }
 
-    //free(message);
     pthread_exit(NULL);
 }
 
@@ -96,7 +92,7 @@ int main(int argc, char * argv[]){
     time_t begin = time(NULL);
 
     if (argc != 4 || flags->fifoname == NULL || flags->nsecs == 0) {
-        //free(flags);
+        free(flags);
         perror("Usage: U1 <-t nsecs> fifoname");
         exit(1);
     }
@@ -115,7 +111,7 @@ int main(int argc, char * argv[]){
     } while (public_fd == -1 && timeout < 3);
 
     if(timeout == 3){ //Took too long to open 
-        //free(flags);
+        free(flags);
         perror("Failed to open FIFO");
         exit(1);
     } 
@@ -129,8 +125,8 @@ int main(int argc, char * argv[]){
         *thrArg = t + 1; // Request number
        
         if (pthread_create(&tid, NULL, send_request, thrArg)){
-            //free(thrArg);
-            //free(flags);
+            free(thrArg);
+            free(flags);
             perror("Failed to create thread");
             exit(1);
         }
@@ -138,8 +134,8 @@ int main(int argc, char * argv[]){
         pthread_detach(tid);
 
         if (usleep(5000)) {
-            //free(flags);
-            //free(thrArg);
+            free(flags);
+            free(thrArg);
             perror("Failed sleeping");
             exit(1);
         }
@@ -148,11 +144,11 @@ int main(int argc, char * argv[]){
     }
 
     if (close(public_fd) == -1){
-        //free(flags);
+        free(flags);
         perror("Failed closing fifo");
         exit(1);
     }
 
-    //free(flags);
+    free(flags);
     pthread_exit(NULL);
 }
