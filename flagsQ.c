@@ -1,12 +1,13 @@
 #include "flagsQ.h"
+#include <limits.h>
 
 flagsQ* flagsQ_constructor() {
     flagsQ* c = (flagsQ*) malloc(sizeof(flagsQ));
 
     c->nsecs = 0;
     c->fifoname = "";
-    unsigned int nthreads = 0;
-    unsigned int nplaces = 0;
+    c->nthreads = 9999999;
+    c->nplaces = 9999999;
 
     return c;
 }
@@ -46,6 +47,7 @@ void parse_flagsQ(int argc, char* argv[], flagsQ* c) {
             unsigned int val = strtol(argument, &size, 10);
 
             if ((size == argument) || (*size != '\0')) {
+                free(c); 
                 perror("Size must be an integer\n");
                 exit(1);
             }
@@ -62,6 +64,7 @@ void parse_flagsQ(int argc, char* argv[], flagsQ* c) {
             unsigned int val = strtol(argument, &size, 10);
 
             if ((size == argument) || (*size != '\0')) {
+                free(c); 
                 perror("Size must be an integer\n");
                 exit(1);
             }

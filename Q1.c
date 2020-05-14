@@ -139,13 +139,18 @@ int main(int argc, char * argv[]){
 
     // Check Flags
     c = flagsQ_constructor();
+    parse_flagsQ(argc, argv, c);
+
+    if ( (argc != 4 && argc != 8) || c->fifoname == NULL || c->nsecs == 0) {
+        perror("Usage: Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname");
+        //perror("Usage: Q1 <-t nsecs> fifoname");
+        exit(1);
+    }
 
     num_threads = (sem_t*) malloc(sizeof(sem_t));
     avail_places = (sem_t*) malloc(sizeof(sem_t));
     can_check = (sem_t*) malloc(sizeof(sem_t));
 
-
-    parse_flagsQ(argc, argv, c);
 
     if (sem_init(num_threads, NOT_SHARED, c->nthreads) == -1){
         perror("Couldn't initiate semaphore.");
@@ -164,12 +169,6 @@ int main(int argc, char * argv[]){
 
     //BEGIN TIME COUNT
     time_t begin = time(NULL);
-
-    if (argc != 8  || c->fifoname == NULL || c->nsecs == 0) {
-        //perror("Usage: Q1 <-t nsecs> [-l nplaces] [-n nthreads] fifoname");
-        perror("Usage: Q1 <-t nsecs> fifoname");
-        exit(1);
-    }
 
     // Create and open public FIFO
     if (mkfifo(c->fifoname, 0660) == -1){
