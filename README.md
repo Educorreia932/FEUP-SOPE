@@ -1,5 +1,5 @@
 # Operating Systems
-MIEIC 2019/2020 - 2<sup>nd</sup> year / 2<sup>nd</sup> semester
+## MIEIC - 2<sup>nd</sup> year / 1<sup>st</sup> semester
 
 ## Exercises
 
@@ -11,3 +11,5 @@ MIEIC 2019/2020 - 2<sup>nd</sup> year / 2<sup>nd</sup> semester
 | Signals                               | [Signals](https://github.com/Educorreia932/SOPE/tree/master/Exercises/Signals)                                       |
 | Pipes and FIFOs                       | [Pipes and FIFOs](https://github.com/Educorreia932/SOPE/tree/master/Exercises/Pipes%20and%20FIFOs)                           |
 | Threads                               | [Threads](https://github.com/Educorreia932/SOPE/tree/master/Exercises/Threads)                                       |
+**Course Page:** https://sigarra.up.pt/feup/pt/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=436441  
+**Final Grade:** ? / 20
