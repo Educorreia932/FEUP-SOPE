@@ -10,7 +10,9 @@
 #define READ 0
 #define WRITE 1
 
-int main() {
+int main(int argc, char * argv[]) {
+    if (argc != 2) exit(1);
+    
     size_t BUFFER_SIZE = 256;
     
     int fd1[2];
@@ -20,7 +22,9 @@ int main() {
     pipe(fd2);
 
     pid_t pid = fork();
-
+    
+    if (pid < 0) exit(2);
+    
     if (pid == 0) {
         close(fd1[WRITE]);
         close(fd2[READ]);
@@ -32,7 +36,7 @@ int main() {
 
         perror("Failed exec");
 
-        exit(1);
+        exit(3);
     }
 
     close(fd1[READ]);
@@ -41,8 +45,9 @@ int main() {
     char aux[256];
     char* line = aux;
 
-    int file = open("result.txt", O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0644);
-
+    int file = open(argv[1], O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, 0644);
+    if (file == -1) exit(4);
+    
     FILE* f = fdopen(fd2[READ], "r");
 
     while (true) {
@@ -53,10 +58,7 @@ int main() {
 
         write(fd1[WRITE], line, strlen(line));
 
-        getline(&line, &BUFFER_SIZE, f);
-
         line[strlen(line) - 1] = '\0'; // Replace the '\n'
-
         write(file, line, strlen(line));
         write(file, " = ", 3);
         
